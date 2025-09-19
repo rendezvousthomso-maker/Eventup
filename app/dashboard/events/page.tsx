@@ -1,17 +1,13 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { MyEventsSection } from "@/components/my-events-section"
 
 export default async function EventsPage() {
-  const supabase = await createServerClient()
+  const session = await getServerSession(authOptions)
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error || !user) {
+  if (!session?.user) {
     redirect("/auth/login")
   }
 
@@ -23,7 +19,7 @@ export default async function EventsPage() {
           <p className="text-muted-foreground mt-2">Manage all your hosted events</p>
         </div>
 
-        <MyEventsSection userId={user.id} />
+        <MyEventsSection userId={session.user.id!} />
       </div>
     </DashboardLayout>
   )

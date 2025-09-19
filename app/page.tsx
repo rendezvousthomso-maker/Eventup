@@ -7,7 +7,14 @@ import { EventFilters } from "@/components/event-filters"
 import { EventCard } from "@/components/event-card"
 import { Footer } from "@/components/footer"
 import { ReservationPopup } from "@/components/reservation-popup"
-import { createBrowserClient } from "@/lib/supabase/client"
+import { EnhancedSearch } from "@/components/enhanced-search"
+import { useSession } from "next-auth/react"
+
+interface SearchFilters {
+  location: string
+  date: string
+  category: string | null
+}
 
 interface Event {
   id: string
@@ -28,45 +35,61 @@ export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([])
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    location: "",
+    date: "",
+    category: null
+  })
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isReservationOpen, setIsReservationOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
-
-  const supabase = createBrowserClient()
+  
+  const { data: session } = useSession()
 
   useEffect(() => {
     fetchEvents()
-    checkUser()
   }, [])
 
   useEffect(() => {
-    if (selectedCategory) {
-      setFilteredEvents(events.filter((event) => event.category === selectedCategory))
-    } else {
-      setFilteredEvents(events)
-    }
-  }, [events, selectedCategory])
+    let filtered = events
 
-  const checkUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    setUser(user)
-  }
+    // Filter by category (either from search filters or selected category)
+    const categoryFilter = searchFilters.category || selectedCategory
+    if (categoryFilter) {
+      filtered = filtered.filter((event) => event.category === categoryFilter)
+    }
+
+    // Filter by location
+    if (searchFilters.location) {
+      filtered = filtered.filter((event) =>
+        event.location.toLowerCase().includes(searchFilters.location.toLowerCase()) ||
+        event.address.toLowerCase().includes(searchFilters.location.toLowerCase())
+      )
+    }
+
+    // Filter by date
+    if (searchFilters.date) {
+      filtered = filtered.filter((event) => {
+        const eventDate = new Date(event.date).toISOString().split('T')[0]
+        return eventDate === searchFilters.date
+      })
+    }
+
+    setFilteredEvents(filtered)
+  }, [events, selectedCategory, searchFilters])
 
   const fetchEvents = async () => {
     try {
-      const { data, error } = await supabase.from("events").select("*").order("date", { ascending: true })
-
-      if (error) {
-        console.error("Error fetching events:", error)
-        return
+      const response = await fetch('/api/events')
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch events')
       }
 
+      const data = await response.json()
       setEvents(data || [])
     } catch (error) {
-      console.error("Error:", error)
+      console.error("Error fetching events:", error)
     } finally {
       setLoading(false)
     }
@@ -74,6 +97,12 @@ export default function HomePage() {
 
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category)
+    setSearchFilters(prev => ({ ...prev, category: null })) // Clear search category when using filter buttons
+  }
+
+  const handleSearch = (filters: SearchFilters) => {
+    setSearchFilters(filters)
+    setSelectedCategory(null) // Clear category filter when using search
   }
 
   const handleReserveClick = (event: Event) => {
@@ -92,6 +121,7 @@ export default function HomePage() {
       <HeroSection />
 
       <main className="container mx-auto px-6 py-12">
+        <EnhancedSearch filters={searchFilters} onSearch={handleSearch} />
         <EventFilters selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
 
         {loading ? (
@@ -109,7 +139,15 @@ export default function HomePage() {
           <>
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-semibold text-[#222222]">
-                {selectedCategory ? `${selectedCategory} Events` : "Popular events in Bangalore"}
+                {(() => {
+                  const activeCategory = searchFilters.category || selectedCategory
+                  const hasFilters = searchFilters.location || searchFilters.date || activeCategory
+                  
+                  if (hasFilters) {
+                    return "Search Results"
+                  }
+                  return "Popular events in Bangalore"
+                })()}
               </h2>
               <span className="text-[#717171] text-sm">
                 {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""} found
@@ -134,7 +172,7 @@ export default function HomePage() {
 
       <Footer />
 
-      <ReservationPopup event={selectedEvent} isOpen={isReservationOpen} onClose={handleReservationClose} user={user} />
+      <ReservationPopup event={selectedEvent} isOpen={isReservationOpen} onClose={handleReservationClose} user={session?.user} />
     </div>
   )
 }

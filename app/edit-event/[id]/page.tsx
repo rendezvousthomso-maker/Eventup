@@ -1,4 +1,5 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { EditEventForm } from "@/components/edit-event-form"
 
@@ -9,26 +10,27 @@ interface EditEventPageProps {
 }
 
 export default async function EditEventPage({ params }: EditEventPageProps) {
-  const supabase = await createServerClient()
+  const session = await getServerSession(authOptions)
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
+  if (!session?.user) {
     redirect("/auth/login")
   }
 
-  // Fetch the event and verify ownership
-  const { data: event, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", params.id)
-    .eq("host_id", user.id)
-    .single()
+  // Fetch the event and verify ownership via API
+  const response = await fetch(`${process.env.NEXTAUTH_URL}/api/events/${params.id}`, {
+    headers: {
+      'Cookie': '', // Note: This is a server-side fetch, cookies will be handled differently
+    },
+  })
 
-  if (error || !event) {
+  if (!response.ok) {
+    redirect("/dashboard")
+  }
+
+  const event = await response.json()
+
+  // Verify ownership
+  if (event.hostId !== session.user.id) {
     redirect("/dashboard")
   }
 
@@ -47,3 +49,4 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
     </div>
   )
 }
+

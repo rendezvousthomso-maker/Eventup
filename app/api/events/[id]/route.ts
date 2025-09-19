@@ -1,43 +1,34 @@
-import { createServerClient } from "@/lib/supabase/server"
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = await createServerClient()
+    const session = await getServerSession(authOptions)
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     // Verify the event belongs to the current user
-    const { data: event, error: eventError } = await supabase
-      .from("events")
-      .select("host_id")
-      .eq("id", params.id)
-      .single()
+    const event = await prisma.event.findUnique({
+      where: { id: params.id },
+      select: { hostId: true }
+    })
 
-    if (eventError || !event) {
+    if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    if (event.host_id !== user.id) {
+    if (event.hostId !== session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    // Delete related bookings first
-    await supabase.from("bookings").delete().eq("event_id", params.id)
-
-    // Delete the event
-    const { error: deleteError } = await supabase.from("events").delete().eq("id", params.id)
-
-    if (deleteError) {
-      throw deleteError
-    }
+    // Delete the event (related bookings will be deleted due to CASCADE)
+    await prisma.event.delete({
+      where: { id: params.id }
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -48,42 +39,47 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = await createServerClient()
+    const session = await getServerSession(authOptions)
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const eventData = await request.json()
 
     // Verify the event belongs to the current user
-    const { data: event, error: eventError } = await supabase
-      .from("events")
-      .select("host_id")
-      .eq("id", params.id)
-      .single()
+    const event = await prisma.event.findUnique({
+      where: { id: params.id },
+      select: { hostId: true }
+    })
 
-    if (eventError || !event) {
+    if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    if (event.host_id !== user.id) {
+    if (event.hostId !== session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
     // Update the event
-    const { error: updateError } = await supabase.from("events").update(eventData).eq("id", params.id)
+    const updatedEvent = await prisma.event.update({
+      where: { id: params.id },
+      data: {
+        name: eventData.name,
+        description: eventData.description,
+        category: eventData.category,
+        date: eventData.date ? new Date(eventData.date) : undefined,
+        time: eventData.time ? new Date(`1970-01-01T${eventData.time}`) : undefined,
+        location: eventData.location,
+        address: eventData.address,
+        seats: eventData.seats ? parseInt(eventData.seats) : undefined,
+        hostName: eventData.hostName,
+        hostWhatsapp: eventData.hostWhatsapp,
+        imageUrl: eventData.imageUrl
+      }
+    })
 
-    if (updateError) {
-      throw updateError
-    }
-
-    return NextResponse.json({ success: true })
+    return NextResponse.json(updatedEvent)
   } catch (error) {
     console.error("Error updating event:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

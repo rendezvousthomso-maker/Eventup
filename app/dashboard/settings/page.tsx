@@ -1,17 +1,13 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function SettingsPage() {
-  const supabase = await createServerClient()
+  const session = await getServerSession(authOptions)
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error || !user) {
+  if (!session?.user) {
     redirect("/auth/login")
   }
 
@@ -30,15 +26,15 @@ export default async function SettingsPage() {
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Email</label>
-              <p className="text-foreground">{user.email}</p>
+              <p className="text-foreground">{session.user.email}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Name</label>
+              <p className="text-foreground">{session.user.name || 'Not provided'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">User ID</label>
-              <p className="text-foreground font-mono text-sm">{user.id}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Account Created</label>
-              <p className="text-foreground">{new Date(user.created_at).toLocaleDateString()}</p>
+              <p className="text-foreground font-mono text-sm">{session.user.id}</p>
             </div>
           </CardContent>
         </Card>

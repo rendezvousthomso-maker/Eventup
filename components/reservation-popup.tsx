@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Minus, Plus, Users } from "lucide-react"
-import { createBrowserClient } from "@/lib/supabase/client"
+import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { openWhatsApp } from "@/lib/whatsapp"
@@ -31,7 +31,6 @@ export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPo
   const [numberOfPeople, setNumberOfPeople] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const supabase = createBrowserClient()
 
   if (!event) return null
 
@@ -45,27 +44,28 @@ export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPo
     setIsLoading(true)
 
     try {
-      // Insert booking into database
-      const { data, error } = await supabase
-        .from("bookings")
-        .insert({
-          event_id: event.id,
-          user_id: user.id,
-          number_of_people: numberOfPeople,
-          status: "pending",
-        })
-        .select()
-        .single()
+      // Create booking via API
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId: event.id,
+          numberOfPeople,
+        }),
+      })
 
-      if (error) {
-        if (error.code === "23505") {
+      if (!response.ok) {
+        const error = await response.json()
+        if (response.status === 409) {
           toast({
             title: "Already Reserved",
             description: "You have already reserved this event.",
             variant: "destructive",
           })
         } else {
-          throw error
+          throw new Error(error.error || 'Failed to create booking')
         }
         return
       }

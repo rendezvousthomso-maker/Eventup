@@ -1,53 +1,47 @@
-import { createServerClient } from "@/lib/supabase/server"
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = await createServerClient()
+    const session = await getServerSession(authOptions)
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { status } = await request.json()
 
-    if (!["approved", "rejected"].includes(status)) {
+    if (!["CONFIRMED", "CANCELLED"].includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 })
     }
 
     // Verify the booking belongs to an event hosted by the current user
-    const { data: booking, error: bookingError } = await supabase
-      .from("bookings")
-      .select(`
-        *,
-        events!inner (
-          host_id
-        )
-      `)
-      .eq("id", params.id)
-      .single()
+    const booking = await prisma.booking.findUnique({
+      where: { id: params.id },
+      include: {
+        event: {
+          select: { hostId: true }
+        }
+      }
+    })
 
-    if (bookingError || !booking) {
+    if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 })
     }
 
-    if (booking.events.host_id !== user.id) {
+    if (booking.event.hostId !== session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
     // Update booking status
-    const { error: updateError } = await supabase.from("bookings").update({ status }).eq("id", params.id)
+    const updatedBooking = await prisma.booking.update({
+      where: { id: params.id },
+      data: { status: status as any }
+    })
 
-    if (updateError) {
-      throw updateError
-    }
-
-    return NextResponse.json({ success: true })
+    return NextResponse.json(updatedBooking)
   } catch (error) {
     console.error("Error updating booking:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

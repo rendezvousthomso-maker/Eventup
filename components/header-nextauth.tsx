@@ -86,7 +86,15 @@ export function Header() {
                     <button className="flex items-center space-x-2 border border-gray-300 rounded-full py-2 px-3 hover:shadow-md transition-shadow">
                       <Menu className="h-4 w-4 text-gray-600" />
                       <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-white" />
+                        {user.image ? (
+                          <img 
+                            src={user.image} 
+                            alt={user.name || "User"} 
+                            className="w-8 h-8 rounded-full"
+                          />
+                        ) : (
+                          <User className="h-4 w-4 text-white" />
+                        )}
                       </div>
                     </button>
                   </DropdownMenuTrigger>

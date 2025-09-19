@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createBrowserClient } from "@/lib/supabase/client"
+// Supabase temporarily disabled - using API calls instead
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -17,13 +17,13 @@ import Link from "next/link"
 
 interface Event {
   id: string
-  title: string
+  name: string
   description: string
   date: string
   time: string
   location: string
   category: string
-  max_attendees: number
+  seats: number
   image_url?: string
   host_whatsapp?: string
 }
@@ -34,29 +34,37 @@ interface EditEventFormProps {
 
 export function EditEventForm({ event }: EditEventFormProps) {
   const [formData, setFormData] = useState({
-    title: event.title,
+    name: event.name,
     description: event.description,
     date: event.date,
     time: event.time,
     location: event.location,
     category: event.category,
-    max_attendees: event.max_attendees,
+    seats: event.seats,
     image_url: event.image_url || "",
     host_whatsapp: event.host_whatsapp || "",
   })
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
-  const supabase = createBrowserClient()
+  // const supabase = createBrowserClient() // Temporarily disabled
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const { error } = await supabase.from("events").update(formData).eq("id", event.id)
+      const response = await fetch(`/api/events/${event.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error('Failed to update event')
+      }
 
       toast({
         title: "Success",
@@ -88,11 +96,11 @@ export function EditEventForm({ event }: EditEventFormProps) {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="title">Event Title</Label>
+            <Label htmlFor="name">Event Title</Label>
             <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
               placeholder="Enter event title"
               required
             />
@@ -137,9 +145,9 @@ export function EditEventForm({ event }: EditEventFormProps) {
           <div className="space-y-2">
             <Label htmlFor="location">Location</Label>
             <LocationInput
-              value={formData.location}
-              onChange={(value) => handleInputChange("location", value)}
-              placeholder="Enter event location"
+              locationValue={formData.location}
+              addressValue=""
+              onLocationSelect={(location, address) => handleInputChange("location", location)}
             />
           </div>
 
@@ -159,14 +167,14 @@ export function EditEventForm({ event }: EditEventFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="max_attendees">Max Attendees</Label>
+              <Label htmlFor="seats">Max Attendees</Label>
               <Input
-                id="max_attendees"
+                id="seats"
                 type="number"
                 min="1"
                 max="100"
-                value={formData.max_attendees}
-                onChange={(e) => handleInputChange("max_attendees", Number.parseInt(e.target.value))}
+                value={formData.seats}
+                onChange={(e) => handleInputChange("seats", Number.parseInt(e.target.value))}
                 required
               />
             </div>

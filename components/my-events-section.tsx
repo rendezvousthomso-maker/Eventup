@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createBrowserClient } from "@/lib/supabase/client"
+// Supabase temporarily disabled - using API calls instead
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -43,7 +43,7 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null)
   const [viewAttendeesEventId, setViewAttendeesEventId] = useState<string | null>(null)
   const { toast } = useToast()
-  const supabase = createBrowserClient()
+  // const supabase = createBrowserClient() // Temporarily disabled
 
   useEffect(() => {
     fetchEvents()

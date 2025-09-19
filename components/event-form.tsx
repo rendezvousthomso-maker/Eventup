@@ -4,15 +4,16 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CalendarIcon, MapPinIcon, UsersIcon, PhoneIcon, ImageIcon, CheckCircleIcon } from "lucide-react"
 import { LocationInput } from "@/components/location-input"
-import { ImageUpload } from "@/components/image-upload"
+import { ImageUploadR2 } from "@/components/image-upload-r2"
 import { validateForm, commonValidations, type ValidationRules } from "@/components/form-validation"
 
 interface EventFormData {
@@ -24,7 +25,8 @@ interface EventFormData {
   seats: number
   description: string
   whatsapp: string
-  image: File | null
+  imageUrl: string | null
+  category: string
 }
 
 const validationRules: ValidationRules = {
@@ -36,10 +38,12 @@ const validationRules: ValidationRules = {
   seats: commonValidations.positiveNumber,
   description: { required: true, minLength: 10, maxLength: 1000 },
   whatsapp: commonValidations.phone,
+  category: { required: true },
 }
 
 export function EventForm() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [success, setSuccess] = useState(false)
@@ -52,7 +56,8 @@ export function EventForm() {
     seats: 1,
     description: "",
     whatsapp: "",
-    image: null,
+    imageUrl: null,
+    category: "RECREATION",
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -74,8 +79,24 @@ export function EventForm() {
     }
   }
 
-  const handleImageSelect = (file: File | null) => {
-    setFormData((prev) => ({ ...prev, image: file }))
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+
+    // Clear field error when user selects
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
+    }
+  }
+
+  const handleImageUpload = (url: string | null) => {
+    setFormData((prev) => ({ ...prev, imageUrl: url }))
   }
 
   const handleLocationSelect = (location: string, address: string) => {
@@ -101,6 +122,12 @@ export function EventForm() {
     setErrors({})
     setSuccess(false)
 
+    // Check authentication
+    if (!session?.user) {
+      setErrors({ submit: "You must be logged in to create an event" })
+      return
+    }
+
     // Validate form
     const validationErrors = validateForm(formData, validationRules)
     if (Object.keys(validationErrors).length > 0) {
@@ -111,56 +138,30 @@ export function EventForm() {
     setIsLoading(true)
 
     try {
-      const supabase = createClient()
-
-      // Get current user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-      if (userError || !user) {
-        throw new Error("You must be logged in to create an event")
-      }
-
-      let imageUrl = null
-
-      // Upload image if provided
-      if (formData.image) {
-        const fileExt = formData.image.name.split(".").pop()
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("event-images")
-          .upload(fileName, formData.image)
-
-        if (uploadError) {
-          throw new Error(`Image upload failed: ${uploadError.message}`)
-        }
-
-        // Get public URL
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("event-images").getPublicUrl(uploadData.path)
-
-        imageUrl = publicUrl
-      }
-
-      // Insert event into database
-      const { error: insertError } = await supabase.from("events").insert({
-        name: formData.name,
-        date: formData.date,
-        time: formData.time,
-        location: formData.location,
-        address: formData.address,
-        seats: formData.seats,
-        description: formData.description,
-        host_whatsapp: formData.whatsapp,
-        image_url: imageUrl,
-        host_id: user.id,
+      // Create event via API
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          date: formData.date,
+          time: formData.time,
+          location: formData.location,
+          address: formData.address,
+          seats: formData.seats,
+          description: formData.description,
+          hostWhatsapp: formData.whatsapp,
+          imageUrl: formData.imageUrl,
+          category: formData.category,
+          hostName: session.user.name || 'Anonymous',
+        }),
       })
 
-      if (insertError) {
-        throw new Error(`Failed to create event: ${insertError.message}`)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create event')
       }
 
       setSuccess(true)
@@ -250,22 +251,41 @@ export function EventForm() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="seats" className="flex items-center gap-2">
-                  <UsersIcon className="h-4 w-4" />
-                  Number of Seats *
-                </Label>
-                <Input
-                  id="seats"
-                  name="seats"
-                  type="number"
-                  min="1"
-                  value={formData.seats}
-                  onChange={handleInputChange}
-                  required
-                  className={errors.seats ? "border-red-500" : ""}
-                />
-                {errors.seats && <p className="text-sm text-red-500 mt-1">{errors.seats}</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="seats" className="flex items-center gap-2">
+                    <UsersIcon className="h-4 w-4" />
+                    Number of Seats *
+                  </Label>
+                  <Input
+                    id="seats"
+                    name="seats"
+                    type="number"
+                    min="1"
+                    value={formData.seats}
+                    onChange={handleInputChange}
+                    required
+                    className={errors.seats ? "border-red-500" : ""}
+                  />
+                  {errors.seats && <p className="text-sm text-red-500 mt-1">{errors.seats}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="category">Category *</Label>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => handleSelectChange('category', value)}
+                  >
+                    <SelectTrigger className={errors.category ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PET_MEET">Pet Meet</SelectItem>
+                      <SelectItem value="GAMES_NIGHT">Games Night</SelectItem>
+                      <SelectItem value="RECREATION">Recreation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.category && <p className="text-sm text-red-500 mt-1">{errors.category}</p>}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -345,7 +365,7 @@ export function EventForm() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ImageUpload onImageSelect={handleImageSelect} selectedImage={formData.image} />
+              <ImageUploadR2 onImageUpload={handleImageUpload} currentImageUrl={formData.imageUrl} />
             </CardContent>
           </Card>
         </div>

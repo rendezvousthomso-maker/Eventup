@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { EventForm } from "@/components/event-form"
 
 export default async function CreateEventPage() {
-  const supabase = await createClient()
+  const session = await getServerSession(authOptions)
 
-  const { data, error } = await supabase.auth.getUser()
-  if (error || !data?.user) {
+  if (!session?.user) {
     redirect("/auth/login")
   }
 

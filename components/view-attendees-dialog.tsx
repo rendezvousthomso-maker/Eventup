@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,20 +11,19 @@ import { useToast } from "@/hooks/use-toast"
 
 interface Booking {
   id: string
-  status: "pending" | "approved" | "rejected"
-  number_of_people: number
-  created_at: string
-  user_id: string
-  profiles: {
-    full_name: string | null
+  status: "PENDING" | "CONFIRMED" | "CANCELLED"
+  numberOfPeople: number
+  createdAt: string
+  user: {
+    name: string | null
     email: string
-  } | null
+  }
 }
 
 interface Event {
   id: string
-  title: string
-  max_attendees: number
+  name: string
+  seats: number
 }
 
 interface ViewAttendeesDialogProps {
@@ -39,7 +37,6 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const supabase = createBrowserClient()
 
   useEffect(() => {
     if (eventId && open) {
@@ -52,35 +49,16 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
 
     setLoading(true)
     try {
-      // Fetch event details
-      const { data: eventData, error: eventError } = await supabase
-        .from("events")
-        .select("id, title, max_attendees")
-        .eq("id", eventId)
-        .single()
+      // Fetch event details and bookings
+      const response = await fetch(`/api/events/${eventId}/bookings`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch event attendees')
+      }
 
-      if (eventError) throw eventError
-      setEvent(eventData)
-
-      // Fetch bookings with user profiles
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from("bookings")
-        .select(`
-          id,
-          status,
-          number_of_people,
-          created_at,
-          user_id,
-          profiles:user_id (
-            full_name,
-            email
-          )
-        `)
-        .eq("event_id", eventId)
-        .order("created_at", { ascending: false })
-
-      if (bookingsError) throw bookingsError
-      setBookings(bookingsData || [])
+      const data = await response.json()
+      setEvent(data.event)
+      setBookings(data.bookings || [])
     } catch (error) {
       console.error("Error fetching attendees:", error)
       toast({
@@ -93,17 +71,25 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
     }
   }
 
-  const updateBookingStatus = async (bookingId: string, status: "approved" | "rejected") => {
+  const updateBookingStatus = async (bookingId: string, status: "CONFIRMED" | "CANCELLED") => {
     try {
-      const { error } = await supabase.from("bookings").update({ status }).eq("id", bookingId)
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error('Failed to update booking')
+      }
 
       setBookings(bookings.map((booking) => (booking.id === bookingId ? { ...booking, status } : booking)))
 
       toast({
         title: "Success",
-        description: `Booking ${status} successfully.`,
+        description: `Booking ${status.toLowerCase()} successfully.`,
       })
     } catch (error) {
       console.error("Error updating booking:", error)
@@ -116,23 +102,23 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
   }
 
   const getBookingStats = () => {
-    const pending = bookings.filter((b) => b.status === "pending")
-    const approved = bookings.filter((b) => b.status === "approved")
-    const totalApprovedSeats = approved.reduce((sum, b) => sum + b.number_of_people, 0)
-    const seatsLeft = event ? event.max_attendees - totalApprovedSeats : 0
+    const pending = bookings.filter((b) => b.status === "PENDING")
+    const confirmed = bookings.filter((b) => b.status === "CONFIRMED")
+    const totalConfirmedSeats = confirmed.reduce((sum, b) => sum + b.numberOfPeople, 0)
+    const seatsLeft = event ? event.seats - totalConfirmedSeats : 0
 
-    return { pending: pending.length, approved: approved.length, totalApprovedSeats, seatsLeft }
+    return { pending: pending.length, confirmed: confirmed.length, totalConfirmedSeats, seatsLeft }
   }
 
   const stats = getBookingStats()
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "approved":
+      case "CONFIRMED":
         return "bg-green-100 text-green-800 border-green-200"
-      case "rejected":
+      case "CANCELLED":
         return "bg-red-100 text-red-800 border-red-200"
-      case "pending":
+      case "PENDING":
         return "bg-yellow-100 text-yellow-800 border-yellow-200"
       default:
         return "bg-gray-100 text-gray-800 border-gray-200"
@@ -145,7 +131,7 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            {event?.title} - Attendees
+            {event?.name} - Attendees
           </DialogTitle>
           <DialogDescription>Manage booking requests and view confirmed attendees for your event.</DialogDescription>
         </DialogHeader>
@@ -173,13 +159,13 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
-                  <div className="text-sm text-muted-foreground">Approved</div>
+                  <div className="text-2xl font-bold text-green-600">{stats.confirmed}</div>
+                  <div className="text-sm text-muted-foreground">Confirmed</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-primary">{stats.totalApprovedSeats}</div>
+                  <div className="text-2xl font-bold text-primary">{stats.totalConfirmedSeats}</div>
                   <div className="text-sm text-muted-foreground">Confirmed Seats</div>
                 </CardContent>
               </Card>
@@ -209,14 +195,14 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
                 <h3 className="text-lg font-semibold">Booking Requests</h3>
 
                 {/* Pending Requests */}
-                {bookings.filter((b) => b.status === "pending").length > 0 && (
+                {bookings.filter((b) => b.status === "PENDING").length > 0 && (
                   <div className="space-y-3">
                     <h4 className="text-md font-medium flex items-center gap-2">
                       <Clock className="h-4 w-4 text-yellow-600" />
-                      Pending Approval ({bookings.filter((b) => b.status === "pending").length})
+                      Pending Approval ({bookings.filter((b) => b.status === "PENDING").length})
                     </h4>
                     {bookings
-                      .filter((booking) => booking.status === "pending")
+                      .filter((booking) => booking.status === "PENDING")
                       .map((booking) => (
                         <Card key={booking.id} className="border-yellow-200">
                           <CardContent className="p-4">
@@ -224,20 +210,20 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
                               <div className="flex-1">
                                 <div className="flex items-center gap-3">
                                   <div>
-                                    <p className="font-medium">{booking.profiles?.full_name || "Anonymous User"}</p>
-                                    <p className="text-sm text-muted-foreground">{booking.profiles?.email}</p>
+                                    <p className="font-medium">{booking.user?.name || "Anonymous User"}</p>
+                                    <p className="text-sm text-muted-foreground">{booking.user?.email}</p>
                                   </div>
                                   <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-2">
-                                  Requested {booking.number_of_people} seat{booking.number_of_people > 1 ? "s" : ""} •
-                                  {new Date(booking.created_at).toLocaleDateString()}
+                                  Requested {booking.numberOfPeople} seat{booking.numberOfPeople > 1 ? "s" : ""} •
+                                  {new Date(booking.createdAt).toLocaleDateString()}
                                 </p>
                               </div>
                               <div className="flex gap-2 ml-4">
                                 <Button
                                   size="sm"
-                                  onClick={() => updateBookingStatus(booking.id, "approved")}
+                                  onClick={() => updateBookingStatus(booking.id, "CONFIRMED")}
                                   className="bg-green-600 hover:bg-green-700"
                                 >
                                   <Check className="h-4 w-4 mr-1" />
@@ -246,7 +232,7 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => updateBookingStatus(booking.id, "rejected")}
+                                  onClick={() => updateBookingStatus(booking.id, "CANCELLED")}
                                   className="text-red-600 border-red-200 hover:bg-red-50"
                                 >
                                   <X className="h-4 w-4 mr-1" />
@@ -260,28 +246,28 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
                   </div>
                 )}
 
-                {/* Approved Attendees */}
-                {bookings.filter((b) => b.status === "approved").length > 0 && (
+                {/* Confirmed Attendees */}
+                {bookings.filter((b) => b.status === "CONFIRMED").length > 0 && (
                   <div className="space-y-3">
                     <h4 className="text-md font-medium flex items-center gap-2">
                       <UserCheck className="h-4 w-4 text-green-600" />
-                      Confirmed Attendees ({bookings.filter((b) => b.status === "approved").length})
+                      Confirmed Attendees ({bookings.filter((b) => b.status === "CONFIRMED").length})
                     </h4>
                     {bookings
-                      .filter((booking) => booking.status === "approved")
+                      .filter((booking) => booking.status === "CONFIRMED")
                       .map((booking) => (
                         <Card key={booking.id} className="border-green-200">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <div>
-                                  <p className="font-medium">{booking.profiles?.full_name || "Anonymous User"}</p>
-                                  <p className="text-sm text-muted-foreground">{booking.profiles?.email}</p>
+                                  <p className="font-medium">{booking.user?.name || "Anonymous User"}</p>
+                                  <p className="text-sm text-muted-foreground">{booking.user?.email}</p>
                                 </div>
                                 <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                {booking.number_of_people} seat{booking.number_of_people > 1 ? "s" : ""}
+                                {booking.numberOfPeople} seat{booking.numberOfPeople > 1 ? "s" : ""}
                               </div>
                             </div>
                           </CardContent>
@@ -290,28 +276,28 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
                   </div>
                 )}
 
-                {/* Rejected Requests */}
-                {bookings.filter((b) => b.status === "rejected").length > 0 && (
+                {/* Cancelled Requests */}
+                {bookings.filter((b) => b.status === "CANCELLED").length > 0 && (
                   <div className="space-y-3">
                     <h4 className="text-md font-medium flex items-center gap-2 text-red-600">
                       <X className="h-4 w-4" />
-                      Rejected ({bookings.filter((b) => b.status === "rejected").length})
+                      Cancelled ({bookings.filter((b) => b.status === "CANCELLED").length})
                     </h4>
                     {bookings
-                      .filter((booking) => booking.status === "rejected")
+                      .filter((booking) => booking.status === "CANCELLED")
                       .map((booking) => (
                         <Card key={booking.id} className="border-red-200 opacity-75">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <div>
-                                  <p className="font-medium">{booking.profiles?.full_name || "Anonymous User"}</p>
-                                  <p className="text-sm text-muted-foreground">{booking.profiles?.email}</p>
+                                  <p className="font-medium">{booking.user?.name || "Anonymous User"}</p>
+                                  <p className="text-sm text-muted-foreground">{booking.user?.email}</p>
                                 </div>
                                 <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                {booking.number_of_people} seat{booking.number_of_people > 1 ? "s" : ""}
+                                {booking.numberOfPeople} seat{booking.numberOfPeople > 1 ? "s" : ""}
                               </div>
                             </div>
                           </CardContent>

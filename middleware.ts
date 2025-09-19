@@ -1,9 +1,36 @@
-import { updateSession } from "@/lib/supabase/middleware"
-import type { NextRequest } from "next/server"
+import { withAuth } from "next-auth/middleware"
+import { NextResponse } from "next/server"
 
-export async function middleware(request: NextRequest) {
-  return await updateSession(request)
-}
+export default withAuth(
+  function middleware(req) {
+    // Add any custom middleware logic here
+    return NextResponse.next()
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        // Public routes that don't require authentication
+        const publicPaths = [
+          "/",
+          "/auth/login",
+          "/auth/sign-up", 
+          "/auth/error",
+          "/api/auth"
+        ]
+        
+        const { pathname } = req.nextUrl
+        
+        // Allow public paths
+        if (publicPaths.some(path => pathname.startsWith(path))) {
+          return true
+        }
+        
+        // Require authentication for protected routes
+        return !!token
+      },
+    },
+  }
+)
 
 export const config = {
   matcher: [
@@ -13,7 +40,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
-     * Feel free to modify this pattern to include more paths.
      */
     "/((?!_next/static|_next/image|favicon.ico|.*.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
