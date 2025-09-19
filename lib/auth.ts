@@ -1,16 +1,16 @@
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
-import PostgresAdapter from "@auth/pg-adapter"
-import { Pool } from "pg"
+// import PostgresAdapter from "@auth/pg-adapter"
+// import { Pool } from "pg"
 
-// Create PostgreSQL connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-})
+// Create PostgreSQL connection pool (commented out for JWT strategy)
+// const pool = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+//   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+// })
 
 export const authOptions: NextAuthOptions = {
-  adapter: PostgresAdapter(pool),
+  // adapter: PostgresAdapter(pool), // Commented out for JWT strategy
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -76,6 +76,9 @@ export const authOptions: NextAuthOptions = {
       }
       if (user) {
         token.id = user.id
+        token.name = user.name
+        token.email = user.email
+        token.picture = user.image
       }
       return token
     },
