@@ -83,6 +83,12 @@ export default function Page() {
                     Sign up
                   </Link>
                 </div>
+                
+                <div className="text-center">
+                  <Link href="/" className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">
+                    ← Back to Home
+                  </Link>
+                </div>
               </div>
             </CardContent>
           </Card>

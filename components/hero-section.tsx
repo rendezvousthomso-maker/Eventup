@@ -1,4 +1,5 @@
 import { Search } from "lucide-react"
+import Link from "next/link"
 
 export function HeroSection() {
   return (
@@ -17,57 +18,20 @@ export function HeroSection() {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto mb-12">
-          <div className="bg-white border border-gray-300 rounded-full shadow-lg hover:shadow-xl transition-shadow duration-300 p-2">
-            <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-300">
-              <div className="flex-1 px-6 py-4">
-                <label className="block text-xs font-semibold text-[#222222] mb-1">Where</label>
-                <input
-                  type="text"
-                  placeholder="Search destinations"
-                  className="w-full text-sm text-[#717171] placeholder-[#717171] bg-transparent border-none outline-none"
-                />
-              </div>
-              <div className="flex-1 px-6 py-4">
-                <label className="block text-xs font-semibold text-[#222222] mb-1">When</label>
-                <input
-                  type="text"
-                  placeholder="Add dates"
-                  className="w-full text-sm text-[#717171] placeholder-[#717171] bg-transparent border-none outline-none"
-                />
-              </div>
-              <div className="flex-1 px-6 py-4">
-                <label className="block text-xs font-semibold text-[#222222] mb-1">Who</label>
-                <input
-                  type="text"
-                  placeholder="Add guests"
-                  className="w-full text-sm text-[#717171] placeholder-[#717171] bg-transparent border-none outline-none"
-                />
-              </div>
-              <div className="flex items-center px-2">
-                <button
-                  className="p-4 rounded-full transition-all duration-200 hover:scale-105"
-                  style={{ background: "linear-gradient(135deg, #e61e4d 0%, #e31c5f 100%)", color: "#ffffff" }}
-                >
-                  <Search className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="text-center">
-          <button
-            className="font-semibold py-4 px-8 rounded-lg text-base transition-all duration-200 hover:scale-105"
-            style={{
-              background: "linear-gradient(135deg, #e61e4d 0%, #e31c5f 100%)",
-              color: "#ffffff",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            Host an Event
-          </button>
+          <Link href="/create-event">
+            <button
+              className="font-semibold py-4 px-8 rounded-lg text-base transition-all duration-200 hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg, #e61e4d 0%, #e31c5f 100%)",
+                color: "#ffffff",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Host an Event
+            </button>
+          </Link>
         </div>
       </div>
     </section>

@@ -121,7 +121,6 @@ export default function HomePage() {
       <HeroSection />
 
       <main className="container mx-auto px-6 py-12">
-        <EnhancedSearch filters={searchFilters} onSearch={handleSearch} />
         <EventFilters selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
 
         {loading ? (
