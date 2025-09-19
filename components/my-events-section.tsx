@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-// Supabase temporarily disabled - using API calls instead
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -43,29 +42,14 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null)
   const [viewAttendeesEventId, setViewAttendeesEventId] = useState<string | null>(null)
   const { toast } = useToast()
-  // const supabase = createBrowserClient() // Temporarily disabled
 
-  useEffect(() => {
-    fetchEvents()
-  }, [userId])
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
-      const { data: eventsData, error } = await supabase
-        .from("events")
-        .select(`
-          *,
-          bookings (
-            id,
-            status,
-            number_of_people
-          )
-        `)
-        .eq("host_id", userId)
-        .order("date", { ascending: true })
-
-      if (error) throw error
-
+      const response = await fetch(`/api/events?hostId=${userId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch events')
+      }
+      const eventsData = await response.json()
       setEvents(eventsData || [])
     } catch (error) {
       console.error("Error fetching events:", error)
@@ -77,17 +61,21 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [userId, toast])
+
+  useEffect(() => {
+    fetchEvents()
+  }, [fetchEvents])
 
   const handleDeleteEvent = async (eventId: string) => {
     try {
-      // First delete related bookings
-      await supabase.from("bookings").delete().eq("event_id", eventId)
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'DELETE',
+      })
 
-      // Then delete the event
-      const { error } = await supabase.from("events").delete().eq("id", eventId)
-
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error('Failed to delete event')
+      }
 
       setEvents(events.filter((event) => event.id !== eventId))
       toast({
@@ -106,7 +94,7 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
   }
 
   const getSeatsLeft = (event: EventWithBookings) => {
-    const approvedBookings = event.bookings.filter((booking) => booking.status === "approved")
+    const approvedBookings = event.bookings.filter((booking) => booking.status === "confirmed")
     const totalBooked = approvedBookings.reduce((sum, booking) => sum + booking.number_of_people, 0)
     return event.max_attendees - totalBooked
   }

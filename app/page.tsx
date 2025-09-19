@@ -7,7 +7,7 @@ import { EventFilters } from "@/components/event-filters"
 import { EventCard } from "@/components/event-card"
 import { Footer } from "@/components/footer"
 import { ReservationPopup } from "@/components/reservation-popup"
-import { EnhancedSearch } from "@/components/enhanced-search"
+// import { EnhancedSearch } from "@/components/enhanced-search" // Currently unused
 import { useSession } from "next-auth/react"
 
 interface SearchFilters {
@@ -100,10 +100,10 @@ export default function HomePage() {
     setSearchFilters(prev => ({ ...prev, category: null })) // Clear search category when using filter buttons
   }
 
-  const handleSearch = (filters: SearchFilters) => {
-    setSearchFilters(filters)
-    setSelectedCategory(null) // Clear category filter when using search
-  }
+  // const handleSearch = (filters: SearchFilters) => {
+  //   setSearchFilters(filters)
+  //   setSelectedCategory(null) // Clear category filter when using search
+  // }
 
   const handleReserveClick = (event: Event) => {
     setSelectedEvent(event)
@@ -171,7 +171,7 @@ export default function HomePage() {
 
       <Footer />
 
-      <ReservationPopup event={selectedEvent} isOpen={isReservationOpen} onClose={handleReservationClose} user={session?.user} />
+      <ReservationPopup event={selectedEvent} isOpen={isReservationOpen} onClose={handleReservationClose} user={session?.user || null} />
     </div>
   )
 }

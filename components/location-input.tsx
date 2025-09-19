@@ -12,8 +12,14 @@ interface LocationInputProps {
 
 declare global {
   interface Window {
-    google: any
-    initGoogleMaps: () => void
+    google: {
+      maps: {
+        places: {
+          Autocomplete: new (input: HTMLInputElement, options?: unknown) => unknown
+        }
+      }
+    }
+    initGoogleMaps?: () => void
   }
 }
 
@@ -21,8 +27,8 @@ export function LocationInput({ onLocationSelect, locationValue, addressValue }:
   const locationInputRef = useRef<HTMLInputElement>(null)
   const addressInputRef = useRef<HTMLInputElement>(null)
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false)
-  const [locationAutocomplete, setLocationAutocomplete] = useState<any>(null)
-  const [addressAutocomplete, setAddressAutocomplete] = useState<any>(null)
+  const [locationAutocomplete, setLocationAutocomplete] = useState<unknown>(null)
+  const [addressAutocomplete, setAddressAutocomplete] = useState<unknown>(null)
   const [hasApiKey, setHasApiKey] = useState(false)
 
   useEffect(() => {
@@ -71,7 +77,9 @@ export function LocationInput({ onLocationSelect, locationValue, addressValue }:
       if (script.parentNode) {
         script.parentNode.removeChild(script)
       }
-      delete window.initGoogleMaps
+      if (window.initGoogleMaps) {
+        delete window.initGoogleMaps
+      }
     }
   }, [hasApiKey])
 

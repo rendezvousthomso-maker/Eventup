@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 // Supabase temporarily disabled - using API calls instead
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -36,36 +36,14 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
   const { toast } = useToast()
   // const supabase = createBrowserClient() // Temporarily disabled
 
-  useEffect(() => {
-    fetchAllBookings()
-  }, [userId])
-
-  const fetchAllBookings = async () => {
+  const fetchAllBookings = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select(`
-          id,
-          status,
-          number_of_people,
-          created_at,
-          events!inner (
-            id,
-            title,
-            date,
-            time,
-            host_id
-          ),
-          profiles:user_id (
-            full_name,
-            email
-          )
-        `)
-        .eq("events.host_id", userId)
-        .order("created_at", { ascending: false })
-
-      if (error) throw error
-
+      const response = await fetch(`/api/bookings?hostId=${userId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookings')
+      }
+      
+      const data = await response.json()
       setBookings(data || [])
     } catch (error) {
       console.error("Error fetching bookings:", error)
@@ -77,13 +55,25 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [userId, toast])
+
+  useEffect(() => {
+    fetchAllBookings()
+  }, [fetchAllBookings])
 
   const updateBookingStatus = async (bookingId: string, status: "approved" | "rejected") => {
     try {
-      const { error } = await supabase.from("bookings").update({ status }).eq("id", bookingId)
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error('Failed to update booking status')
+      }
 
       setBookings(bookings.map((booking) => (booking.id === bookingId ? { ...booking, status } : booking)))
 

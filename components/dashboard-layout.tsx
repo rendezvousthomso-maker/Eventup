@@ -7,12 +7,14 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Calendar, Users, BarChart3, Settings, Menu, Home, Plus } from "lucide-react"
+import { Calendar, Users, BarChart3, Settings, Menu, Home, Plus, ClipboardList, UserCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
   { name: "My Events", href: "/dashboard/events", icon: Calendar },
+  { name: "Reservations", href: "/dashboard/reservations", icon: ClipboardList },
+  { name: "My Bookings", href: "/dashboard/my-bookings", icon: UserCheck },
   { name: "Attendees", href: "/dashboard/attendees", icon: Users },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]

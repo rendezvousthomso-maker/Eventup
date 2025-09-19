@@ -1,16 +1,16 @@
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
-// import PostgresAdapter from "@auth/pg-adapter"
-// import { Pool } from "pg"
+import PostgresAdapter from "@auth/pg-adapter"
+import { Pool } from "pg"
 
-// Create PostgreSQL connection pool (commented out for JWT strategy)
-// const pool = new Pool({
-//   connectionString: process.env.DATABASE_URL,
-//   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-// })
+// Create PostgreSQL connection pool for database adapter
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+})
 
 export const authOptions: NextAuthOptions = {
-  // adapter: PostgresAdapter(pool), // Commented out for JWT strategy
+  adapter: PostgresAdapter(pool),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -30,7 +30,7 @@ export const authOptions: NextAuthOptions = {
   },
   debug: process.env.NODE_ENV === "development", // Only debug in development
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
+    async signIn({ user, account, profile, email }) {
       if (process.env.NODE_ENV === "development") {
         console.log("SignIn callback:", { user, account, profile, email });
       }
@@ -58,33 +58,19 @@ export const authOptions: NextAuthOptions = {
         return baseUrl;
       }
     },
-    async session({ token, session }) {
+    async session({ session, user }) {
       if (process.env.NODE_ENV === "development") {
-        console.log("Session callback:", { token, session });
+        console.log("Session callback:", { session, user });
       }
-      if (token && session.user) {
-        session.user.id = token.id as string
-        session.user.name = token.name
-        session.user.email = token.email
-        session.user.image = token.picture as string
+      // With database adapter, user info comes from database
+      if (user && session.user) {
+        session.user.id = user.id
+        session.user.name = user.name
+        session.user.email = user.email
+        session.user.image = user.image
       }
       return session
     },
-    async jwt({ user, token, account, profile }) {
-      if (process.env.NODE_ENV === "development") {
-        console.log("JWT callback:", { user, token, account, profile });
-      }
-      if (user) {
-        token.id = user.id
-        token.name = user.name
-        token.email = user.email
-        token.picture = user.image
-      }
-      return token
-    },
-  },
-  session: {
-    strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
 }

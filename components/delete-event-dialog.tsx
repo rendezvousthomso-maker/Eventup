@@ -25,7 +25,7 @@ export function DeleteEventDialog({ open, onOpenChange, onConfirm, eventTitle }:
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Event</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{eventTitle}"? This action cannot be undone and will also remove all
+            Are you sure you want to delete &quot;{eventTitle}&quot;? This action cannot be undone and will also remove all
             associated bookings.
           </AlertDialogDescription>
         </AlertDialogHeader>

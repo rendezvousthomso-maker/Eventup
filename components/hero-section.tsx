@@ -1,4 +1,4 @@
-import { Search } from "lucide-react"
+// import { Search } from "lucide-react" // Currently unused
 import Link from "next/link"
 
 export function HeroSection() {

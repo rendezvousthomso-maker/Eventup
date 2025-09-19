@@ -3,14 +3,14 @@ export interface ValidationRule {
   minLength?: number
   maxLength?: number
   pattern?: RegExp
-  custom?: (value: any) => string | null
+  custom?: (value: unknown) => string | null
 }
 
 export interface ValidationRules {
   [key: string]: ValidationRule
 }
 
-export function validateField(value: any, rules: ValidationRule): string | null {
+export function validateField(value: unknown, rules: ValidationRule): string | null {
   if (rules.required && (!value || (typeof value === "string" && !value.trim()))) {
     return "This field is required"
   }
@@ -36,7 +36,7 @@ export function validateField(value: any, rules: ValidationRule): string | null 
   return null
 }
 
-export function validateForm(data: Record<string, any>, rules: ValidationRules): Record<string, string> {
+export function validateForm(data: Record<string, unknown>, rules: ValidationRules): Record<string, string> {
   const errors: Record<string, string> = {}
 
   for (const [field, fieldRules] of Object.entries(rules)) {
@@ -58,7 +58,8 @@ export const commonValidations = {
   phone: {
     required: true,
     pattern: /^\+?[\d\s\-$$$$]+$/,
-    custom: (value: string) => {
+    custom: (value: unknown) => {
+      if (typeof value !== 'string') return "Invalid phone number format"
       const cleaned = value.replace(/\D/g, "")
       if (cleaned.length < 10) return "Phone number must be at least 10 digits"
       return null
@@ -66,7 +67,8 @@ export const commonValidations = {
   },
   date: {
     required: true,
-    custom: (value: string) => {
+    custom: (value: unknown) => {
+      if (typeof value !== 'string') return "Invalid date format"
       const selectedDate = new Date(value)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -76,7 +78,8 @@ export const commonValidations = {
   },
   positiveNumber: {
     required: true,
-    custom: (value: number) => {
+    custom: (value: unknown) => {
+      if (typeof value !== 'number') return "Invalid number format"
       if (value < 1) return "Must be at least 1"
       return null
     },

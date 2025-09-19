@@ -1,7 +1,7 @@
 // Cloudflare R2 Storage Service
 // S3-compatible storage with free egress and generous free tier
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 interface CloudflareR2Config {
@@ -42,14 +42,15 @@ class CloudflareR2Service {
         Key: key,
         Body: file,
         ContentType: contentType || 'image/jpeg',
-        // Make object publicly readable
-        ACL: 'public-read',
+        // Note: R2 doesn't support ACL, use bucket-level public access or custom domain
       });
 
       await this.s3Client.send(command);
       
-      // Return the public URL
-      return `https://pub-${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.dev/${key}`;
+      // Return the public URL - you need to configure a custom domain or public bucket access
+      // For public buckets: https://pub-<bucket-subdomain>.r2.dev/<key>
+      // For custom domain: https://your-domain.com/<key>
+      return this.getPublicUrl(key);
     } catch (error) {
       console.error('Error uploading to R2:', error);
       throw new Error('Failed to upload file to storage');
@@ -86,7 +87,7 @@ class CloudflareR2Service {
         Bucket: this.bucketName,
         Key: key,
         ContentType: contentType,
-        ACL: 'public-read',
+        // Note: R2 doesn't support ACL in presigned URLs
       });
 
       return await getSignedUrl(this.s3Client, command, { expiresIn });
@@ -109,7 +110,23 @@ class CloudflareR2Service {
    * Get public URL for a file
    */
   getPublicUrl(key: string): string {
-    return `https://pub-${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.dev/${key}`;
+    // For public buckets, the URL should include the bucket name
+    // First, try the public subdomain format (if bucket has public access enabled)
+    const publicSubdomain = process.env.CLOUDFLARE_R2_PUBLIC_SUBDOMAIN;
+    if (publicSubdomain) {
+      return `https://${publicSubdomain}.r2.dev/${key}`;
+    }
+    
+    // Fallback to a custom domain if configured
+    const customDomain = process.env.CLOUDFLARE_R2_CUSTOM_DOMAIN;
+    if (customDomain) {
+      return `${customDomain}/${key}`;
+    }
+    
+    // If no public access is configured, return a placeholder
+    // You'll need to enable public access for your bucket in Cloudflare dashboard
+    console.warn('No public URL configuration found. Please enable public access for your R2 bucket.');
+    return `https://your-bucket-public-url.r2.dev/${key}`;
   }
 }
 

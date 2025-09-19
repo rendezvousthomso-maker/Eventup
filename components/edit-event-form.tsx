@@ -147,7 +147,7 @@ export function EditEventForm({ event }: EditEventFormProps) {
             <LocationInput
               locationValue={formData.location}
               addressValue=""
-              onLocationSelect={(location, address) => handleInputChange("location", location)}
+              onLocationSelect={(location) => handleInputChange("location", location)}
             />
           </div>
 

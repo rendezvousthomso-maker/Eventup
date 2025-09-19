@@ -3,9 +3,18 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const hostId = searchParams.get('hostId')
+
+    let whereClause = {}
+    if (hostId) {
+      whereClause = { hostId: hostId }
+    }
+
     const events = await prisma.event.findMany({
+      where: whereClause,
       orderBy: {
         date: 'asc'
       },
@@ -17,6 +26,17 @@ export async function GET() {
             email: true
           }
         },
+        bookings: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
         _count: {
           select: {
             bookings: true
@@ -26,8 +46,9 @@ export async function GET() {
     })
 
     // Transform the data to match the expected format
-    const transformedEvents = events.map(event => ({
+    const transformedEvents = events.map((event) => ({
       id: event.id,
+      title: event.name, // Map name to title for compatibility
       name: event.name,
       description: event.description,
       category: event.category,
@@ -35,10 +56,19 @@ export async function GET() {
       time: event.time.toISOString().split('T')[1].split('.')[0],
       location: event.location,
       address: event.address,
+      max_attendees: event.seats, // Map seats to max_attendees for compatibility
       seats: event.seats,
       host_name: event.hostName,
       host_whatsapp: event.hostWhatsapp,
       image_url: event.imageUrl,
+      created_at: event.createdAt.toISOString(),
+      bookings: event.bookings.map((booking) => ({
+        id: booking.id,
+        status: booking.status.toLowerCase(),
+        number_of_people: booking.numberOfPeople,
+        user: booking.user,
+        created_at: booking.createdAt.toISOString()
+      })),
       bookings_count: event._count.bookings
     }))
 

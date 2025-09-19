@@ -129,7 +129,7 @@ export function EventForm() {
     }
 
     // Validate form
-    const validationErrors = validateForm(formData, validationRules)
+    const validationErrors = validateForm(formData as unknown as Record<string, unknown>, validationRules)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return

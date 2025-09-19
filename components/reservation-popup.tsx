@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Minus, Plus, Users } from "lucide-react"
-import { useSession } from "next-auth/react"
+// import { useSession } from "next-auth/react" // Currently unused
 import { useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { openWhatsApp } from "@/lib/whatsapp"
@@ -24,7 +24,11 @@ interface ReservationPopupProps {
   event: Event | null
   isOpen: boolean
   onClose: () => void
-  user: any
+  user: {
+    id?: string
+    name?: string | null
+    email?: string | null
+  } | null
 }
 
 export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPopupProps) {
@@ -185,7 +189,7 @@ export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPo
 
           {!user && (
             <p className="text-sm text-muted-foreground text-center">
-              You'll be redirected to sign in to complete your reservation
+              You&apos;ll be redirected to sign in to complete your reservation
             </p>
           )}
         </div>

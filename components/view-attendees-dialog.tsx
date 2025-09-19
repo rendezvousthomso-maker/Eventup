@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -38,13 +38,7 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {
-    if (eventId && open) {
-      fetchEventAndBookings()
-    }
-  }, [eventId, open])
-
-  const fetchEventAndBookings = async () => {
+  const fetchEventAndBookings = useCallback(async () => {
     if (!eventId) return
 
     setLoading(true)
@@ -69,7 +63,13 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
     } finally {
       setLoading(false)
     }
-  }
+  }, [eventId, toast])
+
+  useEffect(() => {
+    if (eventId && open) {
+      fetchEventAndBookings()
+    }
+  }, [eventId, open, fetchEventAndBookings])
 
   const updateBookingStatus = async (bookingId: string, status: "CONFIRMED" | "CANCELLED") => {
     try {
@@ -186,7 +186,7 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
                   <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No bookings yet</h3>
                   <p className="text-muted-foreground">
-                    When people book your event, they'll appear here for you to approve.
+                    When people book your event, they&apos;ll appear here for you to approve.
                   </p>
                 </CardContent>
               </Card>

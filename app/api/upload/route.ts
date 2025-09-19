@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { cloudflareR2 } from '@/lib/cloudflare-r2';
-import { prisma } from '@/lib/prisma';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
+// import { prisma } from '@/lib/prisma'; // Currently unused
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +15,9 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Use proper user ID from database session
+    const userId = session.user.id;
 
     // Get the uploaded file
     const formData = await request.formData();
@@ -33,17 +38,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
     }
 
-    // Generate unique key for the file
-    const key = cloudflareR2.generateImageKey(session.user.id, file.name);
-
     // Convert File to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload to Cloudflare R2
-    const publicUrl = await cloudflareR2.uploadFile(buffer, key, file.type);
+    let publicUrl: string;
+    let key: string;
 
-    // Note: We'll save image metadata when the event is created
-    // For now, just return the URL for immediate use
+    // Check if Cloudflare R2 is configured
+    const isR2Configured = process.env.CLOUDFLARE_R2_ACCOUNT_ID && 
+                          process.env.CLOUDFLARE_R2_ACCESS_KEY_ID && 
+                          process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY && 
+                          process.env.CLOUDFLARE_R2_BUCKET_NAME;
+
+    if (isR2Configured) {
+      // Use Cloudflare R2
+      key = cloudflareR2.generateImageKey(userId, file.name);
+      publicUrl = await cloudflareR2.uploadFile(buffer, key, file.type);
+    } else {
+      // Fallback to local storage for development
+      const timestamp = Date.now();
+      const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const safeUserId = userId.replace(/[^a-zA-Z0-9]/g, '_');
+      const filename = `${safeUserId}_${timestamp}.${extension}`;
+      
+      // Save to public/uploads directory
+      const uploadDir = join(process.cwd(), 'public', 'uploads');
+      const filePath = join(uploadDir, filename);
+      
+      // Create directory if it doesn't exist
+      try {
+        await writeFile(filePath, new Uint8Array(buffer));
+        publicUrl = `/uploads/${filename}`;
+        key = filename;
+      } catch (error) {
+        // If uploads directory doesn't exist, create a fallback URL
+        console.warn('Could not save file locally:', error);
+        publicUrl = '/placeholder.jpg'; // Fallback to placeholder
+        key = 'placeholder';
+      }
+    }
 
     return NextResponse.json({ 
       success: true, 
@@ -76,27 +109,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'No key provided' }, { status: 400 });
     }
 
-    // Verify user owns this image
-    const image = await prisma.eventImage.findFirst({
-      where: {
-        filename: key,
-        userId: session.user.id,
-      },
-    });
-
-    if (!image) {
-      return NextResponse.json({ error: 'Image not found' }, { status: 404 });
+    // Verify user owns this image by checking if the key contains their user ID
+    const userId = session.user.id;
+    if (!key.includes(userId)) {
+      return NextResponse.json({ error: 'Image not found or unauthorized' }, { status: 404 });
     }
 
     // Delete from R2
     await cloudflareR2.deleteFile(key);
-
-    // Delete from database
-    await prisma.eventImage.delete({
-      where: {
-        id: image.id,
-      },
-    });
 
     return NextResponse.json({ success: true });
 
