@@ -1,0 +1,12 @@
+{
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "env": {
+    "ENABLE_EXPERIMENTAL_COREPACK": "1"
+  },
+  "functions": {
+    "app/api/**/*.ts": {
+      "includeFiles": "prisma/**"
+    }
+  }
+}
