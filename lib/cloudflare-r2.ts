@@ -90,9 +90,24 @@ class CloudflareR2Service {
         // Note: R2 doesn't support ACL in presigned URLs
       });
 
-      return await getSignedUrl(this.s3Client, command, { expiresIn });
+      const presignedUrl = await getSignedUrl(this.s3Client, command, { 
+        expiresIn
+      });
+
+      console.log('Generated presigned URL for key:', key);
+      console.log('Content-Type:', contentType);
+      console.log('Expires in:', expiresIn);
+      
+      return presignedUrl;
     } catch (error) {
       console.error('Error generating presigned URL:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        bucketName: this.bucketName,
+        key,
+        contentType
+      });
       throw new Error('Failed to generate upload URL');
     }
   }
