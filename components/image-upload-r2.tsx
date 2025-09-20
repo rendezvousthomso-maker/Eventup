@@ -97,7 +97,7 @@ export function ImageUploadR2({ onImageSelect, currentImageUrl, disabled = false
   return (
     <div className="space-y-4">
       <Label>
-        {currentImageUrl ? "Update Event Image" : "Event Image (Optional)"}
+        {currentImageUrl ? "Update Event Image" : "Event Image"}
       </Label>
 
       {preview ? (

@@ -32,9 +32,6 @@ export function LocationInput({ onLocationSelect, locationValue, mapsLinkValue }
           onChange={(e) => onLocationSelect(locationValue, e.target.value)}
           placeholder="https://www.google.com/maps/place/..."
         />
-        <p className="text-xs text-gray-500 mt-1">
-          Optional: Paste a Google Maps link for the venue
-        </p>
       </div>
     </div>
   )
