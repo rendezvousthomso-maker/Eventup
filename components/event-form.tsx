@@ -138,7 +138,19 @@ export function EventForm() {
       })
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload to storage')
+        const responseText = await uploadResponse.text()
+        console.error('Upload failed:', {
+          status: uploadResponse.status,
+          statusText: uploadResponse.statusText,
+          headers: Object.fromEntries(uploadResponse.headers.entries()),
+          body: responseText
+        })
+        
+        if (uploadResponse.status === 0 || uploadResponse.status === 403) {
+          throw new Error('CORS error: Please configure CORS policy for your R2 bucket. See TROUBLESHOOTING_R2_CORS.md')
+        } else {
+          throw new Error(`Upload failed with status ${uploadResponse.status}: ${responseText || uploadResponse.statusText}`)
+        }
       }
 
       return publicUrl

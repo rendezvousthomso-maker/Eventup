@@ -58,8 +58,23 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Presigned URL generation error:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    console.error('Environment check:', {
+      accountId: !!process.env.CLOUDFLARE_R2_ACCOUNT_ID,
+      accessKeyId: !!process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+      secretAccessKey: !!process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+      bucketName: process.env.CLOUDFLARE_R2_BUCKET_NAME
+    });
+    
     return NextResponse.json(
-      { error: 'Failed to generate upload URL' },
+      { 
+        error: 'Failed to generate upload URL',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

@@ -102,12 +102,19 @@ class CloudflareR2Service {
    */
   async listEventImages(eventId: string): Promise<Array<{key: string, lastModified: Date, size: number}>> {
     try {
+      console.log(`Listing images for event: ${eventId}`);
+      console.log(`Using bucket: ${this.bucketName}`);
+      console.log(`Looking for prefix: events/${eventId}/`);
+      
       const command = new ListObjectsV2Command({
         Bucket: this.bucketName,
         Prefix: `events/${eventId}/`,
       });
 
       const response = await this.s3Client.send(command);
+      
+      console.log(`Found ${response.Contents?.length || 0} objects`);
+      console.log('Response keys:', response.Contents?.map(obj => obj.Key));
       
       return (response.Contents || []).map(obj => ({
         key: obj.Key || '',
@@ -116,7 +123,12 @@ class CloudflareR2Service {
       })).filter(obj => obj.key.length > 0);
     } catch (error) {
       console.error('Error listing event images:', error);
-      throw new Error('Failed to list event images');
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw new Error(`Failed to list event images: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

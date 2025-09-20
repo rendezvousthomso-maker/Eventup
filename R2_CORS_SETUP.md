@@ -18,7 +18,7 @@ You're getting a CORS error because R2 buckets don't allow cross-origin requests
   {
     "AllowedOrigins": [
       "http://localhost:3000",
-      "https://your-production-domain.com"
+      "https://eventup-xi.vercel.app"
     ],
     "AllowedMethods": [
       "GET",
@@ -51,7 +51,7 @@ npm install -g wrangler
   {
     "AllowedOrigins": [
       "http://localhost:3000",
-      "https://your-production-domain.com"
+      "https://eventup-xi.vercel.app"
     ],
     "AllowedMethods": [
       "GET",
@@ -87,7 +87,7 @@ aws s3api put-bucket-cors \
 
 ## Important Notes
 
-1. **Replace domains**: Update `"https://your-production-domain.com"` with your actual production domain
+1. **Replace domains**: Update `"https://eventup-xi.vercel.app"` with your actual production domain
 2. **Security**: For production, be more specific with allowed origins instead of using wildcards
 3. **Verification**: After applying, wait a few minutes for changes to propagate
 

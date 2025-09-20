@@ -54,8 +54,22 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   } catch (error) {
     console.error('Error fetching event images:', error);
+    
+    // More detailed error logging
+    console.error('Event ID:', eventId);
+    console.error('R2 Config Check:', {
+      accountId: !!process.env.CLOUDFLARE_R2_ACCOUNT_ID,
+      accessKeyId: !!process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+      secretAccessKey: !!process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+      bucketName: process.env.CLOUDFLARE_R2_BUCKET_NAME
+    });
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        eventId 
+      },
       { status: 500 }
     );
   }

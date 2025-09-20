@@ -1,0 +1,25 @@
+[
+  {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "https://eventup-xi.vercel.app",
+      "https://*.vercel.app"
+    ],
+    "AllowedMethods": [
+      "GET",
+      "PUT",
+      "POST",
+      "DELETE",
+      "HEAD",
+      "OPTIONS"
+    ],
+    "AllowedHeaders": [
+      "*"
+    ],
+    "ExposeHeaders": [
+      "ETag",
+      "x-amz-request-id"
+    ],
+    "MaxAgeSeconds": 3600
+  }
+]

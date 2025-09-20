@@ -28,14 +28,31 @@ export async function fetchEventImages(eventId: string): Promise<EventImage[]> {
     });
 
     if (!response.ok) {
-      console.error('Failed to fetch event images:', response.status);
+      console.error('Failed to fetch event images:', {
+        status: response.status,
+        statusText: response.statusText,
+        eventId
+      });
+      
+      // Try to get error details
+      try {
+        const errorData = await response.json();
+        console.error('Error details:', errorData);
+      } catch (e) {
+        console.error('Could not parse error response');
+      }
+      
       return [];
     }
 
     const data: EventImageResponse = await response.json();
     return data.success ? data.images : [];
   } catch (error) {
-    console.error('Error fetching event images:', error);
+    console.error('Error fetching event images:', {
+      error,
+      eventId,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
     return [];
   }
 }
