@@ -127,7 +127,6 @@ export async function GET(request: NextRequest) {
             date: true,
             time: true,
             location: true,
-            address: true,
             seats: true,
             hostName: true,
             hostWhatsapp: true,
@@ -156,7 +155,6 @@ export async function GET(request: NextRequest) {
             date: true,
             time: true,
             location: true,
-            address: true,
             seats: true,
             hostName: true,
             hostWhatsapp: true,
@@ -188,7 +186,6 @@ export async function GET(request: NextRequest) {
         date: booking.event.date.toISOString().split('T')[0], // Format date as YYYY-MM-DD
         time: booking.event.time.toISOString().split('T')[1].split('.')[0], // Format time as HH:MM:SS
         location: booking.event.location,
-        address: booking.event.address,
         hostName: booking.event.hostName,
         hostWhatsapp: booking.event.hostWhatsapp,
         imageUrl: booking.event.imageUrl

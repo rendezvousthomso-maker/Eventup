@@ -28,7 +28,6 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
       date: true,
       time: true,
       location: true,
-      address: true,
       seats: true,
       hostName: true,
       hostWhatsapp: true,
@@ -55,7 +54,6 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
     date: event.date.toISOString().split('T')[0],
     time: event.time.toISOString().split('T')[1].split('.')[0],
     location: event.location,
-    address: event.address,
     seats: event.seats,
     image_url: event.imageUrl,
     host_whatsapp: event.hostWhatsapp

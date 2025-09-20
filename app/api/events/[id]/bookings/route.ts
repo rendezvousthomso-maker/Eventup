@@ -24,7 +24,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         date: true,
         time: true,
         location: true,
-        address: true,
         seats: true,
         hostName: true,
         hostWhatsapp: true,

@@ -26,7 +26,6 @@ interface Event {
   date: string
   time: string
   location: string
-  address: string
   seats: number
   host_name: string
   host_whatsapp: string
@@ -64,8 +63,7 @@ export default function HomePage() {
     // Filter by location
     if (searchFilters.location) {
       filtered = filtered.filter((event) =>
-        event.location.toLowerCase().includes(searchFilters.location.toLowerCase()) ||
-        event.address.toLowerCase().includes(searchFilters.location.toLowerCase())
+        event.location.toLowerCase().includes(searchFilters.location.toLowerCase())
       )
     }
 

@@ -12,7 +12,6 @@ interface Event {
   date: string
   time: string
   location: string
-  address: string
   seats: number
   host_name: string
   host_whatsapp: string
