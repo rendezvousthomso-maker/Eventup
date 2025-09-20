@@ -8,18 +8,18 @@ import { Label } from "@/components/ui/label"
 import { ImageIcon, UploadIcon, XIcon, LoaderIcon } from "lucide-react"
 
 interface ImageUploadR2Props {
-  onImageUpload: (url: string | null) => void
+  onImageSelect: (file: File | null) => void
   currentImageUrl?: string | null
+  disabled?: boolean
 }
 
-export function ImageUploadR2({ onImageUpload, currentImageUrl }: ImageUploadR2Props) {
+export function ImageUploadR2({ onImageSelect, currentImageUrl, disabled = false }: ImageUploadR2Props) {
   const [preview, setPreview] = useState<string | null>(currentImageUrl || null)
   const [dragActive, setDragActive] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(currentImageUrl || null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileSelect = async (file: File) => {
+  const handleFileSelect = (file: File) => {
     // Validate file type
     if (!file.type.startsWith("image/")) {
       alert("Please select an image file")
@@ -39,33 +39,9 @@ export function ImageUploadR2({ onImageUpload, currentImageUrl }: ImageUploadR2P
     }
     reader.readAsDataURL(file)
 
-    // Upload to server
-    setUploading(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Upload failed')
-      }
-
-      const result = await response.json()
-      setUploadedUrl(result.url)
-      onImageUpload(result.url)
-
-    } catch (error) {
-      console.error('Upload error:', error)
-      alert('Failed to upload image. Please try again.')
-      setPreview(null)
-    } finally {
-      setUploading(false)
-    }
+    // Store file for later upload
+    setSelectedFile(file)
+    onImageSelect(file)
   }
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,30 +72,17 @@ export function ImageUploadR2({ onImageUpload, currentImageUrl }: ImageUploadR2P
     }
   }
 
-  const handleRemoveImage = async () => {
-    if (uploadedUrl && uploadedUrl.includes('r2.dev')) {
-      // Extract key from URL for deletion
-      const key = uploadedUrl.split('/').slice(-2).join('/')
-      
-      try {
-        await fetch(`/api/upload?key=${encodeURIComponent(key)}`, {
-          method: 'DELETE',
-        })
-      } catch (error) {
-        console.error('Failed to delete image:', error)
-      }
-    }
-
-    onImageUpload(null)
+  const handleRemoveImage = () => {
     setPreview(null)
-    setUploadedUrl(null)
+    setSelectedFile(null)
+    onImageSelect(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
   }
 
   const handleButtonClick = () => {
-    if (!uploading) {
+    if (!disabled) {
       fileInputRef.current?.click()
     }
   }
@@ -137,31 +100,21 @@ export function ImageUploadR2({ onImageUpload, currentImageUrl }: ImageUploadR2P
               className="w-full h-full object-cover" 
             />
             
-            {uploading && (
-              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <div className="text-white text-center">
-                  <LoaderIcon className="h-8 w-8 animate-spin mx-auto mb-2" />
-                  <p className="text-sm">Uploading...</p>
-                </div>
-              </div>
-            )}
-
-            {!uploading && (
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={handleRemoveImage}
-              >
-                <XIcon className="h-4 w-4" />
-              </Button>
-            )}
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={handleRemoveImage}
+              disabled={disabled}
+            >
+              <XIcon className="h-4 w-4" />
+            </Button>
           </div>
           
-          {uploadedUrl && !uploading && (
-            <p className="text-sm text-green-600 mt-2">
-              ✅ Image uploaded successfully
+          {selectedFile && (
+            <p className="text-sm text-blue-600 mt-2">
+              📎 Image selected: {selectedFile.name}
             </p>
           )}
         </div>
@@ -169,11 +122,11 @@ export function ImageUploadR2({ onImageUpload, currentImageUrl }: ImageUploadR2P
         <div
           className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
             dragActive ? "border-pink-500 bg-pink-50" : "border-gray-300 hover:border-gray-400"
-          } ${uploading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
+          } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          onDragEnter={disabled ? undefined : handleDrag}
+          onDragLeave={disabled ? undefined : handleDrag}
+          onDragOver={disabled ? undefined : handleDrag}
+          onDrop={disabled ? undefined : handleDrop}
         >
           <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <div className="space-y-2">
@@ -185,19 +138,10 @@ export function ImageUploadR2({ onImageUpload, currentImageUrl }: ImageUploadR2P
               variant="outline"
               onClick={handleButtonClick}
               className="flex items-center gap-2 bg-transparent"
-              disabled={uploading}
+              disabled={disabled}
             >
-              {uploading ? (
-                <>
-                  <LoaderIcon className="h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <UploadIcon className="h-4 w-4" />
-                  Choose Image
-                </>
-              )}
+              <UploadIcon className="h-4 w-4" />
+              Choose Image
             </Button>
           </div>
           <p className="text-xs text-gray-500 mt-2">PNG, JPG, GIF up to 5MB</p>
@@ -210,7 +154,7 @@ export function ImageUploadR2({ onImageUpload, currentImageUrl }: ImageUploadR2P
         accept="image/*" 
         onChange={handleFileInputChange} 
         className="hidden" 
-        disabled={uploading}
+        disabled={disabled}
       />
     </div>
   )

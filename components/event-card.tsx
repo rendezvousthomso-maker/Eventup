@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Heart, Star } from "lucide-react"
 import Image from "next/image"
+import { useState, useEffect } from "react"
+import { fetchEventImages, getPrimaryEventImage, type EventImage } from "@/lib/event-images"
 
 interface Event {
   id: string
@@ -25,6 +27,22 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, onReserveClick }: EventCardProps) {
+  const [eventImages, setEventImages] = useState<EventImage[]>([])
+  const [imageLoaded, setImageLoaded] = useState(false)
+
+  useEffect(() => {
+    const loadEventImages = async () => {
+      try {
+        const images = await fetchEventImages(event.id)
+        setEventImages(images)
+      } catch (error) {
+        console.error('Failed to load event images:', error)
+      }
+    }
+
+    loadEventImages()
+  }, [event.id])
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       weekday: "short",
@@ -60,10 +78,14 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
         {/* Image Container */}
         <div className="relative h-64 w-full overflow-hidden rounded-xl">
           <Image
-            src={event.image_url || "/placeholder.svg?height=256&width=400&query=event"}
+            src={(() => {
+              const primaryImage = getPrimaryEventImage(eventImages)
+              return primaryImage?.publicUrl || event.image_url || "/placeholder.svg?height=256&width=400&query=event"
+            })()}
             alt={event.name}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
+            onLoad={() => setImageLoaded(true)}
           />
           {/* Favorite Heart Button */}
           <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors duration-200">

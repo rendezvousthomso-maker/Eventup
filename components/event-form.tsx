@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,9 @@ export function EventForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [success, setSuccess] = useState(false)
+  
+  // Generate a temporary eventId for image uploads during creation
+  const tempEventId = useMemo(() => `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, [])
   const [formData, setFormData] = useState<EventFormData>({
     name: "",
     date: "",
@@ -59,6 +62,8 @@ export function EventForm() {
     imageUrl: null,
     category: "RECREATION",
   })
+
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -95,8 +100,52 @@ export function EventForm() {
     }
   }
 
-  const handleImageUpload = (url: string | null) => {
-    setFormData((prev) => ({ ...prev, imageUrl: url }))
+  const handleImageSelect = (file: File | null) => {
+    setSelectedImageFile(file)
+  }
+
+  const uploadImageIfSelected = async (eventId: string): Promise<string | null> => {
+    if (!selectedImageFile) return null
+
+    try {
+      // Step 1: Request pre-signed URL from backend
+      const presignedResponse = await fetch('/api/upload/presigned-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filename: selectedImageFile.name,
+          contentType: selectedImageFile.type,
+          eventId: eventId
+        }),
+      })
+
+      if (!presignedResponse.ok) {
+        const error = await presignedResponse.json()
+        throw new Error(error.error || 'Failed to get upload URL')
+      }
+
+      const { presignedUrl, publicUrl } = await presignedResponse.json()
+
+      // Step 2: Upload directly to R2 using pre-signed URL
+      const uploadResponse = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: selectedImageFile,
+        headers: {
+          'Content-Type': selectedImageFile.type,
+        },
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload to storage')
+      }
+
+      return publicUrl
+    } catch (error) {
+      console.error('Image upload error:', error)
+      throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   const handleLocationSelect = (location: string, address: string) => {
@@ -138,8 +187,8 @@ export function EventForm() {
     setIsLoading(true)
 
     try {
-      // Create event via API
-      const response = await fetch('/api/events', {
+      // First, create the event to get the eventId
+      const eventResponse = await fetch('/api/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,15 +202,40 @@ export function EventForm() {
           seats: formData.seats,
           description: formData.description,
           hostWhatsapp: formData.whatsapp,
-          imageUrl: formData.imageUrl,
+          imageUrl: null, // Will be updated after image upload
           category: formData.category,
           hostName: session.user.name || 'Anonymous',
         }),
       })
 
-      if (!response.ok) {
-        const error = await response.json()
+      if (!eventResponse.ok) {
+        const error = await eventResponse.json()
         throw new Error(error.error || 'Failed to create event')
+      }
+
+      const createdEvent = await eventResponse.json()
+
+      // Upload image if selected
+      let imageUrl: string | null = null
+      if (selectedImageFile) {
+        imageUrl = await uploadImageIfSelected(createdEvent.id)
+        
+        // Update event with image URL
+        const updateResponse = await fetch(`/api/events/${createdEvent.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...formData,
+            imageUrl: imageUrl,
+            hostName: session.user.name || 'Anonymous',
+          }),
+        })
+
+        if (!updateResponse.ok) {
+          console.warn('Failed to update event with image URL')
+        }
       }
 
       setSuccess(true)
@@ -365,7 +439,7 @@ export function EventForm() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ImageUploadR2 onImageUpload={handleImageUpload} currentImageUrl={formData.imageUrl} />
+              <ImageUploadR2 onImageSelect={handleImageSelect} disabled={isLoading} />
             </CardContent>
           </Card>
         </div>

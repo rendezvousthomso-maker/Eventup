@@ -1,7 +1,7 @@
 // Cloudflare R2 Storage Service
 // S3-compatible storage with free egress and generous free tier
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 interface CloudflareR2Config {
@@ -98,18 +98,48 @@ class CloudflareR2Service {
   }
 
   /**
-   * Generate filename for uploaded image
+   * List all images for a specific event
    */
-  generateImageKey(userId: string, originalFilename: string): string {
+  async listEventImages(eventId: string): Promise<Array<{key: string, lastModified: Date, size: number}>> {
+    try {
+      const command = new ListObjectsV2Command({
+        Bucket: this.bucketName,
+        Prefix: `events/${eventId}/`,
+      });
+
+      const response = await this.s3Client.send(command);
+      
+      return (response.Contents || []).map(obj => ({
+        key: obj.Key || '',
+        lastModified: obj.LastModified || new Date(),
+        size: obj.Size || 0
+      })).filter(obj => obj.key.length > 0);
+    } catch (error) {
+      console.error('Error listing event images:', error);
+      throw new Error('Failed to list event images');
+    }
+  }
+
+  /**
+   * Generate filename for uploaded image organized by event
+   */
+  generateImageKey(eventId: string, originalFilename: string): string {
     const timestamp = Date.now();
     const extension = originalFilename.split('.').pop()?.toLowerCase() || 'jpg';
-    return `events/${userId}/${timestamp}.${extension}`;
+    const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.-]/g, '_');
+    return `events/${eventId}/${timestamp}_${sanitizedFilename}`;
   }
 
   /**
    * Get public URL for a file
    */
   getPublicUrl(key: string): string {
+    // Check for R2_PUBLIC_URL environment variable first (user's custom variable)
+    const publicUrl = process.env.R2_PUBLIC_URL || process.env.CLOUDFLARE_R2_PUBLIC_DOMAIN;
+    if (publicUrl) {
+      return `${publicUrl}/${key}`;
+    }
+
     // For public buckets, the URL should include the bucket name
     // First, try the public subdomain format (if bucket has public access enabled)
     const publicSubdomain = process.env.CLOUDFLARE_R2_PUBLIC_SUBDOMAIN;

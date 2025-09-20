@@ -3,6 +3,75 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const event = await prisma.event.findUnique({
+      where: { id: params.id },
+      include: {
+        host: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        bookings: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: {
+            bookings: true
+          }
+        }
+      }
+    })
+
+    if (!event) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 })
+    }
+
+    // Transform the data to match the expected format
+    const transformedEvent = {
+      id: event.id,
+      title: event.name,
+      name: event.name,
+      description: event.description,
+      category: event.category,
+      date: event.date.toISOString().split('T')[0],
+      time: event.time.toISOString().split('T')[1].split('.')[0],
+      location: event.location,
+      address: event.address,
+      max_attendees: event.seats,
+      seats: event.seats,
+      host_name: event.hostName,
+      host_whatsapp: event.hostWhatsapp,
+      image_url: event.imageUrl,
+      created_at: event.createdAt.toISOString(),
+      bookings: event.bookings.map((booking) => ({
+        id: booking.id,
+        status: booking.status.toLowerCase(),
+        number_of_people: booking.numberOfPeople,
+        user: booking.user,
+        created_at: booking.createdAt.toISOString()
+      })),
+      bookings_count: event._count.bookings
+    }
+
+    return NextResponse.json(transformedEvent)
+  } catch (error) {
+    console.error("Error fetching event:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
