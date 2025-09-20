@@ -64,7 +64,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               className={cn(
                 "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 w-full text-left",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  ? "bg-sidebar-accent text-primary"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
                 isLoading && "opacity-75"
               )}

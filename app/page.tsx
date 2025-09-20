@@ -143,13 +143,13 @@ export default function HomePage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredEvents.map((event) => (
-              <EventCard key={event.id} event={event} onReserveClick={handleReserveClick} />
-            ))}
-          </div>
-
-          {filteredEvents.length === 0 && !loading && (
+          {filteredEvents.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredEvents.map((event) => (
+                <EventCard key={event.id} event={event} onReserveClick={handleReserveClick} />
+              ))}
+            </div>
+          ) : (
             <div className="text-center py-16">
               <p className="text-[#717171] text-lg">No events found for the selected category.</p>
               <p className="text-[#717171] text-sm mt-2">Try selecting a different category or check back later.</p>
