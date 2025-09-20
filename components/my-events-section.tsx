@@ -22,6 +22,8 @@ interface Event {
   location: string
   category: string
   max_attendees: number
+  seats_available?: number
+  seats_confirmed?: number
   image_url?: string
   created_at: string
 }
@@ -100,6 +102,11 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
   }
 
   const getSeatsLeft = (event: EventWithBookings) => {
+    // Use API-provided seats_available if available, otherwise calculate manually
+    if (event.seats_available !== undefined) {
+      return event.seats_available
+    }
+    
     const approvedBookings = event.bookings.filter((booking) => booking.status === "confirmed")
     const totalBooked = approvedBookings.reduce((sum, booking) => sum + booking.number_of_people, 0)
     return event.max_attendees - totalBooked

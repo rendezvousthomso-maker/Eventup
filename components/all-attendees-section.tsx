@@ -13,7 +13,7 @@ import { ListSkeleton } from "@/components/ui/loading-skeleton"
 
 interface BookingWithEvent {
   id: string
-  status: "pending" | "approved" | "rejected"
+  status: "PENDING" | "CONFIRMED" | "CANCELLED"
   number_of_people: number
   created_at: string
   events: {
@@ -64,7 +64,7 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
     fetchAllBookings()
   }, [fetchAllBookings])
 
-  const updateBookingStatus = async (bookingId: string, status: "approved" | "rejected") => {
+  const updateBookingStatus = async (bookingId: string, status: "CONFIRMED" | "CANCELLED") => {
     setProcessingId(bookingId)
     try {
       const response = await fetch(`/api/bookings/${bookingId}`, {
@@ -83,7 +83,7 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
 
       toast({
         title: "Success",
-        description: `Booking ${status} successfully.`,
+        description: `Booking ${status.toLowerCase()} successfully.`,
       })
     } catch (error) {
       console.error("Error updating booking:", error)
@@ -99,20 +99,20 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "approved":
+      case "CONFIRMED":
         return "bg-green-100 text-green-800 border-green-200"
-      case "rejected":
+      case "CANCELLED":
         return "bg-red-100 text-red-800 border-red-200"
-      case "pending":
+      case "PENDING":
         return "bg-yellow-100 text-yellow-800 border-yellow-200"
       default:
         return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
 
-  const pendingBookings = bookings.filter((b) => b.status === "pending")
-  const approvedBookings = bookings.filter((b) => b.status === "approved")
-  const rejectedBookings = bookings.filter((b) => b.status === "rejected")
+  const pendingBookings = bookings.filter((b) => b.status === "PENDING")
+  const confirmedBookings = bookings.filter((b) => b.status === "CONFIRMED")
+  const cancelledBookings = bookings.filter((b) => b.status === "CANCELLED")
 
 
   return (
@@ -130,8 +130,8 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
         <Card>
           <CardContent className="p-6 text-center">
             <UserCheck className="mx-auto h-8 w-8 text-green-600 mb-2" />
-            <div className="text-2xl font-bold text-green-600">{approvedBookings.length}</div>
-            <div className="text-sm text-muted-foreground">Approved Attendees</div>
+            <div className="text-2xl font-bold text-green-600">{confirmedBookings.length}</div>
+            <div className="text-sm text-muted-foreground">Confirmed Attendees</div>
           </CardContent>
         </Card>
         <Card>
@@ -147,8 +147,8 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
       <Tabs defaultValue="pending" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pending">Pending ({pendingBookings.length})</TabsTrigger>
-          <TabsTrigger value="approved">Approved ({approvedBookings.length})</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected ({rejectedBookings.length})</TabsTrigger>
+          <TabsTrigger value="confirmed">Confirmed ({confirmedBookings.length})</TabsTrigger>
+          <TabsTrigger value="cancelled">Cancelled ({cancelledBookings.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending" className="space-y-4">
@@ -184,7 +184,7 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
                     <div className="flex gap-2 ml-4">
                       <Button
                         size="sm"
-                        onClick={() => updateBookingStatus(booking.id, "approved")}
+                        onClick={() => updateBookingStatus(booking.id, "CONFIRMED")}
                         disabled={processingId === booking.id}
                         className="bg-green-600 hover:bg-green-700"
                       >
@@ -198,7 +198,7 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateBookingStatus(booking.id, "rejected")}
+                        onClick={() => updateBookingStatus(booking.id, "CANCELLED")}
                         disabled={processingId === booking.id}
                         className="text-red-600 border-red-200 hover:bg-red-50"
                       >
@@ -217,17 +217,17 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
           )}
         </TabsContent>
 
-        <TabsContent value="approved" className="space-y-4">
-          {approvedBookings.length === 0 ? (
+        <TabsContent value="confirmed" className="space-y-4">
+          {confirmedBookings.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <UserCheck className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No approved attendees</h3>
-                <p className="text-muted-foreground">Approved attendees will appear here.</p>
+                <h3 className="text-lg font-semibold mb-2">No confirmed attendees</h3>
+                <p className="text-muted-foreground">Confirmed attendees will appear here.</p>
               </CardContent>
             </Card>
           ) : (
-            approvedBookings.map((booking) => (
+            confirmedBookings.map((booking) => (
               <Card key={booking.id} className="border-green-200">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -251,17 +251,17 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
           )}
         </TabsContent>
 
-        <TabsContent value="rejected" className="space-y-4">
-          {rejectedBookings.length === 0 ? (
+        <TabsContent value="cancelled" className="space-y-4">
+          {cancelledBookings.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <X className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No rejected requests</h3>
-                <p className="text-muted-foreground">Rejected requests will appear here.</p>
+                <h3 className="text-lg font-semibold mb-2">No cancelled requests</h3>
+                <p className="text-muted-foreground">Cancelled requests will appear here.</p>
               </CardContent>
             </Card>
           ) : (
-            rejectedBookings.map((booking) => (
+            cancelledBookings.map((booking) => (
               <Card key={booking.id} className="border-red-200 opacity-75">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">

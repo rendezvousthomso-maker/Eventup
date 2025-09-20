@@ -111,11 +111,33 @@ export function MyBookingsSection({ userId }: MyBookingsSectionProps) {
     )
   }
 
+  // Filter out bookings with missing event data
+  const validBookings = bookings.filter(booking => 
+    booking.event && booking.event.id && booking.event.name && booking.event.date && booking.event.time
+  )
+
+  if (validBookings.length === 0) {
+    return (
+      <Card className="text-center py-12">
+        <CardContent>
+          <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No valid bookings found</h3>
+          <p className="text-muted-foreground mb-4">
+            There seems to be an issue with your booking data. Please try refreshing the page.
+          </p>
+          <Button onClick={() => fetchBookings()}>
+            Refresh
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
   // Separate bookings into upcoming and past
-  const upcomingBookings = bookings.filter(booking => 
+  const upcomingBookings = validBookings.filter(booking => 
     !isEventPast(booking.event.date, booking.event.time) && booking.status !== 'cancelled'
   )
-  const pastBookings = bookings.filter(booking => 
+  const pastBookings = validBookings.filter(booking => 
     isEventPast(booking.event.date, booking.event.time) || booking.status === 'cancelled'
   )
 

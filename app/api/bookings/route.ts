@@ -5,11 +5,13 @@ import { prisma } from "@/lib/prisma"
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions as any)
 
-    if (!session?.user?.id) {
+    if (!(session as any)?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const userId = ((session as any).user as any).id
 
     const { eventId, numberOfPeople } = await request.json()
 
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest) {
       where: {
         eventId_userId: {
           eventId: eventId,
-          userId: session.user.id
+          userId: userId
         }
       }
     })
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    const totalBookedSeats = confirmedBookings.reduce((sum, booking) => sum + booking.numberOfPeople, 0)
+    const totalBookedSeats = confirmedBookings.reduce((sum: number, booking: any) => sum + booking.numberOfPeople, 0)
     
     if (totalBookedSeats + numberOfPeople > event.seats) {
       return NextResponse.json({ error: "Not enough seats available" }, { status: 400 })
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
     const booking = await prisma.booking.create({
       data: {
         eventId: eventId,
-        userId: session.user.id,
+        userId: userId,
         numberOfPeople: numberOfPeople,
         status: "PENDING"
       },
@@ -92,17 +94,59 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions as any)
 
-    if (!session?.user?.id) {
+    if (!(session as any)?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const bookings = await prisma.booking.findMany({
-      where: { userId: session.user.id },
-      include: {
+    const userId = ((session as any).user as any).id
+
+    const { searchParams } = new URL(request.url)
+    const hostId = searchParams.get('hostId')
+
+    let whereClause = {}
+    let includeClause = {}
+
+    if (hostId) {
+      // Fetch bookings for events hosted by the specified host
+      whereClause = {
+        event: {
+          hostId: hostId
+        }
+      }
+      includeClause = {
+        event: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            category: true,
+            date: true,
+            time: true,
+            location: true,
+            address: true,
+            seats: true,
+            hostName: true,
+            hostWhatsapp: true,
+            imageUrl: true,
+            hostId: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    } else {
+      // Fetch bookings for the current user
+      whereClause = { userId: userId }
+      includeClause = {
         event: {
           select: {
             id: true,
@@ -119,13 +163,44 @@ export async function GET() {
             imageUrl: true
           }
         }
-      },
+      }
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where: whereClause,
+      include: includeClause,
       orderBy: {
         createdAt: 'desc'
       }
     })
 
-    return NextResponse.json(bookings)
+    // Transform the response to match the component's expected structure
+    const transformedBookings = bookings.map((booking: any) => ({
+      id: booking.id,
+      status: booking.status.toLowerCase(), // Convert to lowercase to match component expectations
+      numberOfPeople: booking.numberOfPeople,
+      createdAt: booking.createdAt.toISOString(),
+      event: {
+        id: booking.event.id,
+        name: booking.event.name,
+        description: booking.event.description,
+        category: booking.event.category,
+        date: booking.event.date.toISOString().split('T')[0], // Format date as YYYY-MM-DD
+        time: booking.event.time.toISOString().split('T')[1].split('.')[0], // Format time as HH:MM:SS
+        location: booking.event.location,
+        address: booking.event.address,
+        hostName: booking.event.hostName,
+        hostWhatsapp: booking.event.hostWhatsapp,
+        imageUrl: booking.event.imageUrl
+      },
+      user: booking.user ? {
+        id: booking.user.id,
+        name: booking.user.name,
+        email: booking.user.email
+      } : null
+    }))
+
+    return NextResponse.json(transformedBookings)
   } catch (error) {
     console.error("Error fetching bookings:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

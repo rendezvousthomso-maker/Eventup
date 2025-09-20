@@ -16,6 +16,8 @@ interface Event {
   location: string
   address: string
   seats: number
+  seats_available?: number
+  seats_confirmed?: number
   host_name: string
   host_whatsapp: string
   image_url?: string
@@ -125,17 +127,20 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
-              <span className="text-sm font-semibold text-foreground">{event.seats} seats available</span>
+              <span className="text-sm font-semibold text-foreground">
+                {event.seats_available !== undefined ? event.seats_available : event.seats} seats available
+              </span>
             </div>
             <Button
               size="sm"
               className="primary"
+              disabled={event.seats_available !== undefined && event.seats_available <= 0}
               onClick={(e) => {
                 e.stopPropagation()
                 onReserveClick(event)
               }}
             >
-              Reserve
+              {event.seats_available !== undefined && event.seats_available <= 0 ? "No seats available" : "Reserve"}
             </Button>
           </div>
         </div>

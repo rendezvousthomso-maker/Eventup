@@ -22,6 +22,8 @@ interface Event {
   location: string
   address: string
   seats: number
+  seats_available?: number
+  seats_confirmed?: number
   host_whatsapp: string
   host_name: string
   image_url?: string
@@ -124,7 +126,8 @@ export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPo
   }
 
   const incrementPeople = () => {
-    if (numberOfPeople < event.seats) {
+    const availableSeats = event.seats_available !== undefined ? event.seats_available : event.seats
+    if (numberOfPeople < availableSeats) {
       setNumberOfPeople((prev) => prev + 1)
     }
   }
@@ -191,7 +194,7 @@ export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPo
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Available Spots</span>
-                <span className="font-semibold text-green-600">{event.seats} left</span>
+                <span className="font-semibold text-green-600">{event.seats_available !== undefined ? event.seats_available : event.seats} left</span>
               </div>
             </div>
 
@@ -255,14 +258,14 @@ export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPo
                 variant="outline"
                 size="icon"
                 onClick={incrementPeople}
-                disabled={numberOfPeople >= event.seats}
+                disabled={numberOfPeople >= (event.seats_available !== undefined ? event.seats_available : event.seats)}
                 className="h-10 w-10"
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
 
-            {numberOfPeople >= event.seats && (
+            {numberOfPeople >= (event.seats_available !== undefined ? event.seats_available : event.seats) && (
               <p className="text-sm text-amber-600">Maximum seats reached</p>
             )}
           </div>
@@ -271,9 +274,11 @@ export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPo
           <Button
             onClick={handleReservation}
             className="w-full h-12 text-lg primary"
-            disabled={isLoading}
+            disabled={isLoading || (event.seats_available !== undefined && event.seats_available <= 0)}
           >
-            {isLoading ? "Reserving..." : "Confirm Reservation"}
+            {isLoading ? "Reserving..." : 
+             (event.seats_available !== undefined && event.seats_available <= 0) ? "No seats available" : 
+             "Confirm Reservation"}
           </Button>
 
           {!user && (

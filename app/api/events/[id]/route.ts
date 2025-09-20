@@ -38,6 +38,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
+    // Calculate confirmed seats and available seats
+    const confirmedBookings = event.bookings.filter((booking: any) => booking.status === "CONFIRMED")
+    const totalConfirmedSeats = confirmedBookings.reduce((sum: number, booking: any) => sum + booking.numberOfPeople, 0)
+    const seatsAvailable = event.seats - totalConfirmedSeats
+
     // Transform the data to match the expected format
     const transformedEvent = {
       id: event.id,
@@ -51,11 +56,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       address: event.address,
       max_attendees: event.seats,
       seats: event.seats,
+      seats_available: seatsAvailable,
+      seats_confirmed: totalConfirmedSeats,
       host_name: event.hostName,
       host_whatsapp: event.hostWhatsapp,
       image_url: event.imageUrl,
       created_at: event.createdAt.toISOString(),
-      bookings: event.bookings.map((booking) => ({
+      bookings: event.bookings.map((booking: any) => ({
         id: booking.id,
         status: booking.status.toLowerCase(),
         number_of_people: booking.numberOfPeople,
@@ -74,9 +81,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions as any)
 
-    if (!session?.user?.id) {
+    if (!(session as any)?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -90,7 +97,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    if (event.hostId !== session.user.id) {
+    if (event.hostId !== (session as any).user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
@@ -108,9 +115,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions as any)
 
-    if (!session?.user?.id) {
+    if (!(session as any)?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -126,7 +133,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    if (event.hostId !== session.user.id) {
+    if (event.hostId !== (session as any).user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
