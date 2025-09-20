@@ -72,7 +72,10 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
   }
 
   return (
-    <div className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border rounded-md">
+    <div 
+      className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border rounded-md"
+      onClick={() => onReserveClick(event)}
+    >
       <div className="relative">
         {/* Image Container */}
         <div className="relative h-64 w-full overflow-hidden rounded-md">
@@ -86,9 +89,21 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             onLoad={() => setImageLoaded(true)}
           />
+<<<<<<< Updated upstream
           {/* Guest Favorite Badge */}
           <div className="absolute top-3 left-3 bg-white px-3 py-1 rounded-full text-xs font-semibold text-gray-800 shadow-sm">
             Popular
+=======
+          {/* Favorite Heart Button */}
+          <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors duration-200">
+            <Heart className="h-4 w-4 text-gray-600 hover:text-red-500" />
+          </button>
+          {/* Category Badge */}
+          <div className="bg-white rounded-full absolute top-3 left-3">
+            <span className={`inline-block px-3 py-1 text-xs font-medium bg-white rounded-full border border-gray-200 shadow`}>
+              {event.category}
+            </span>
+>>>>>>> Stashed changes
           </div>
         </div>
 
@@ -96,27 +111,26 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
         <div className="px-3 py-3">
           {/* Location and Rating Row */}
           <div className="flex items-center justify-between mb-1">
+<<<<<<< Updated upstream
             <h3 className="text-base font-semibold truncate pr-2 text-foreground">{event.location}</h3>
+=======
+            <h3 className="text-base font-semibold truncate pr-2 text-foreground">{event.name} </h3>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Star className="h-4 w-4 fill-current text-gray-800" />
+              <span className="text-sm font-medium text-gray-800">4.9</span>
+            </div>
+>>>>>>> Stashed changes
           </div>
 
           {/* Event Name and Host */}
           <p className="text-sm mb-1 truncate text-muted-foreground">
-            {event.name} • Hosted by {event.host_name}
+          {event.location} • Hosted by {event.host_name}
           </p>
 
           {/* Date and Time */}
           <p className="text-sm mb-2 text-muted-foreground">
             {formatDate(event.date)} • {formatTime(event.time)}
           </p>
-
-          {/* Category Badge */}
-          <div className="mb-3">
-            <span
-              className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(event.category)} text-foreground`}
-            >
-              {event.category}
-            </span>
-          </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
@@ -125,7 +139,10 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
             <Button
               size="sm"
               className="primary"
-              onClick={() => onReserveClick(event)}
+              onClick={(e) => {
+                e.stopPropagation()
+                onReserveClick(event)
+              }}
             >
               Reserve
             </Button>

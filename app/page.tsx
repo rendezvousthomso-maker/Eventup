@@ -148,6 +148,27 @@ export default function HomePage() {
               <EventCard key={event.id} event={event} onReserveClick={handleReserveClick} />
             ))}
           </div>
+<<<<<<< Updated upstream
+=======
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-semibold text-[#222222]">
+                {(() => {
+                  const activeCategory = searchFilters.category || selectedCategory
+                  const hasFilters = searchFilters.location || searchFilters.date || activeCategory
+                  
+                  if (hasFilters) {
+                    return "Search Results"
+                  }
+                  return "Popular events in Bangalore"
+                })()}
+              </h2>
+              {/* <span className="text-[#717171] text-sm">
+                {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""} found
+              </span> */}
+            </div>
+>>>>>>> Stashed changes
 
           {filteredEvents.length === 0 && !loading && (
             <div className="text-center py-16">
