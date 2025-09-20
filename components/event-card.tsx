@@ -73,10 +73,10 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
   }
 
   return (
-    <div className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border">
+    <div className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border rounded-md">
       <div className="relative">
         {/* Image Container */}
-        <div className="relative h-64 w-full overflow-hidden rounded-xl">
+        <div className="relative h-64 w-full overflow-hidden rounded-md">
           <Image
             src={(() => {
               const primaryImage = getPrimaryEventImage(eventImages)
@@ -98,7 +98,7 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
         </div>
 
         {/* Content */}
-        <div className="pt-3">
+        <div className="px-3 py-3">
           {/* Location and Rating Row */}
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-base font-semibold truncate pr-2 text-foreground">{event.location}</h3>
@@ -133,7 +133,7 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
             </div>
             <Button
               size="sm"
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm px-4 py-2 h-auto sm:w-auto w-full sm:ml-0 ml-2"
+              className="primary"
               onClick={() => onReserveClick(event)}
             >
               Reserve
