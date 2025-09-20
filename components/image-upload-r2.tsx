@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { ImageIcon, UploadIcon, XIcon, LoaderIcon } from "lucide-react"
@@ -18,6 +18,13 @@ export function ImageUploadR2({ onImageSelect, currentImageUrl, disabled = false
   const [dragActive, setDragActive] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Update preview when currentImageUrl changes
+  useEffect(() => {
+    if (currentImageUrl && !selectedFile) {
+      setPreview(currentImageUrl)
+    }
+  }, [currentImageUrl, selectedFile])
 
   const handleFileSelect = (file: File) => {
     // Validate file type
@@ -89,7 +96,9 @@ export function ImageUploadR2({ onImageSelect, currentImageUrl, disabled = false
 
   return (
     <div className="space-y-4">
-      <Label>Event Image (Optional)</Label>
+      <Label>
+        {currentImageUrl ? "Update Event Image" : "Event Image (Optional)"}
+      </Label>
 
       {preview ? (
         <div className="relative">
@@ -114,7 +123,12 @@ export function ImageUploadR2({ onImageSelect, currentImageUrl, disabled = false
           
           {selectedFile && (
             <p className="text-sm text-blue-600 mt-2">
-              📎 Image selected: {selectedFile.name}
+              📎 New image selected: {selectedFile.name}
+            </p>
+          )}
+          {currentImageUrl && !selectedFile && (
+            <p className="text-sm text-gray-600 mt-2">
+              📷 Current event image
             </p>
           )}
         </div>

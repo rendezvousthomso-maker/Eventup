@@ -53,7 +53,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       date: event.date.toISOString().split('T')[0],
       time: event.time.toISOString().split('T')[1].split('.')[0],
       location: event.location,
-      address: event.address,
+      maps_link: event.mapsLink,
       max_attendees: event.seats,
       seats: event.seats,
       seats_available: seatsAvailable,
@@ -147,11 +147,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         date: eventData.date ? new Date(eventData.date) : undefined,
         time: eventData.time ? new Date(`1970-01-01T${eventData.time}`) : undefined,
         location: eventData.location,
-        address: eventData.address,
-        seats: eventData.seats ? parseInt(eventData.seats) : undefined,
-        hostName: eventData.hostName,
-        hostWhatsapp: eventData.hostWhatsapp,
-        imageUrl: eventData.imageUrl
+        mapsLink: eventData.maps_link || "",
+        seats: eventData.seats ? parseInt(eventData.seats.toString()) : undefined,
+        hostName: eventData.hostName || "",
+        hostWhatsapp: eventData.host_whatsapp || "",
+        imageUrl: eventData.image_url || ""
       }
     })
 

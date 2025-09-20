@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { Heart, Star } from "lucide-react"
+import { } from "lucide-react"
 import { fetchEventImages, getPrimaryEventImage, type EventImage } from "@/lib/event-images"
 
 interface Event {
@@ -14,7 +14,7 @@ interface Event {
   date: string
   time: string
   location: string
-  address: string
+  maps_link?: string
   seats: number
   seats_available?: number
   seats_confirmed?: number
@@ -92,10 +92,6 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             onLoad={() => setImageLoaded(true)}
           />
-          {/* Favorite Heart Button */}
-          <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors duration-200">
-            <Heart className="h-4 w-4 text-gray-600 hover:text-red-500" />
-          </button>
           {/* Category Badge */}
           <div className="bg-white rounded-full absolute top-3 left-3">
             <span className={`inline-block px-3 py-1 text-xs font-medium bg-white rounded-full border border-gray-200 shadow`}>
@@ -106,18 +102,26 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
 
         {/* Content */}
         <div className="px-3 py-3">
-          {/* Location and Rating Row */}
+          {/* Location and Event Name Row */}
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-base font-semibold truncate pr-2 text-foreground">{event.name} </h3>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Star className="h-4 w-4 fill-current text-gray-800" />
-              <span className="text-sm font-medium text-gray-800">4.9</span>
-            </div>
           </div>
 
           {/* Event Name and Host */}
           <p className="text-sm mb-1 truncate text-muted-foreground">
-          {event.location} • Hosted by {event.host_name}
+            {event.maps_link ? (
+              <a 
+                href={event.maps_link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {event.location}
+              </a>
+            ) : (
+              event.location
+            )} • Hosted by {event.host_name}
           </p>
 
           {/* Date and Time */}

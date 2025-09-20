@@ -21,7 +21,7 @@ interface EventFormData {
   date: string
   time: string
   location: string
-  address: string
+  mapsLink: string
   seats: number
   description: string
   whatsapp: string
@@ -34,7 +34,7 @@ const validationRules: ValidationRules = {
   date: commonValidations.date,
   time: { required: true },
   location: { required: true, minLength: 2, maxLength: 100 },
-  address: { required: true, minLength: 5, maxLength: 200 },
+  mapsLink: { required: false },
   seats: commonValidations.positiveNumber,
   description: { required: true, minLength: 10, maxLength: 1000 },
   whatsapp: commonValidations.phone,
@@ -55,7 +55,7 @@ export function EventForm() {
     date: "",
     time: "",
     location: "",
-    address: "",
+    mapsLink: "",
     seats: 1,
     description: "",
     whatsapp: "",
@@ -148,19 +148,19 @@ export function EventForm() {
     }
   }
 
-  const handleLocationSelect = (location: string, address: string) => {
+  const handleLocationSelect = (location: string, mapsLink: string) => {
     setFormData((prev) => ({
       ...prev,
       location,
-      address,
+      mapsLink,
     }))
 
-    // Clear location/address errors
-    if (errors.location || errors.address) {
+    // Clear location/mapsLink errors
+    if (errors.location || errors.mapsLink) {
       setErrors((prev) => {
         const newErrors = { ...prev }
         delete newErrors.location
-        delete newErrors.address
+        delete newErrors.mapsLink
         return newErrors
       })
     }
@@ -198,7 +198,7 @@ export function EventForm() {
           date: formData.date,
           time: formData.time,
           location: formData.location,
-          address: formData.address,
+          mapsLink: formData.mapsLink,
           seats: formData.seats,
           description: formData.description,
           hostWhatsapp: formData.whatsapp,
@@ -375,10 +375,10 @@ export function EventForm() {
               <LocationInput
                 onLocationSelect={handleLocationSelect}
                 locationValue={formData.location}
-                addressValue={formData.address}
+                mapsLinkValue={formData.mapsLink}
               />
               {errors.location && <p className="text-sm text-red-500 mt-1">{errors.location}</p>}
-              {errors.address && <p className="text-sm text-red-500 mt-1">{errors.address}</p>}
+              {errors.mapsLink && <p className="text-sm text-red-500 mt-1">{errors.mapsLink}</p>}
             </CardContent>
           </Card>
         </div>

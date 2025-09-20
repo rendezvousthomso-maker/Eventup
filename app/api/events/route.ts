@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         date: event.date.toISOString().split('T')[0],
         time: event.time.toISOString().split('T')[1].split('.')[0],
         location: event.location,
-        address: event.address,
+        maps_link: event.mapsLink,
         max_attendees: event.seats, // Map seats to max_attendees for compatibility
         seats: event.seats,
         seats_available: seatsAvailable,
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
           date: new Date(eventData.date),
           time: new Date(`1970-01-01T${eventData.time}`),
           location: eventData.location,
-          address: eventData.address,
+          mapsLink: eventData.mapsLink,
           seats: parseInt(eventData.seats),
           hostName: eventData.hostName,
           hostWhatsapp: eventData.hostWhatsapp,

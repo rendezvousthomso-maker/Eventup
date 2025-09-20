@@ -20,7 +20,7 @@ interface Event {
   date: string
   time: string
   location: string
-  address: string
+  maps_link?: string
   seats: number
   seats_available?: number
   seats_confirmed?: number
@@ -220,8 +220,18 @@ export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPo
                 <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 <div>
                   <p className="font-medium">Location</p>
-                  <p className="text-muted-foreground">{event.location}</p>
-                  <p className="text-sm text-muted-foreground">{event.address}</p>
+                  {event.maps_link ? (
+                    <a 
+                      href={event.maps_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {event.location}
+                    </a>
+                  ) : (
+                    <p className="text-muted-foreground">{event.location}</p>
+                  )}
                 </div>
               </div>
 

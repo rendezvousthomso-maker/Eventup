@@ -20,6 +20,7 @@ interface Event {
   date: string
   time: string
   location: string
+  maps_link?: string
   category: string
   max_attendees: number
   seats_available?: number
@@ -168,7 +169,18 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
 
                 <div className="flex items-center text-sm text-muted-foreground">
                   <MapPin className="mr-2 h-4 w-4" />
-                  <span className="line-clamp-1">{event.location}</span>
+                  {event.maps_link ? (
+                    <a 
+                      href={event.maps_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="line-clamp-1 text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {event.location}
+                    </a>
+                  ) : (
+                    <span className="line-clamp-1">{event.location}</span>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between text-sm">

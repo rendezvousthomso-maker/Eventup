@@ -24,7 +24,7 @@ interface MyBooking {
     date: string
     time: string
     location: string
-    address: string
+    maps_link?: string
     hostName: string
     hostWhatsapp: string
     imageUrl?: string
@@ -177,7 +177,18 @@ export function MyBookingsSection({ userId }: MyBookingsSectionProps) {
 
                     <div className="flex items-center text-sm text-muted-foreground">
                       <MapPin className="mr-2 h-4 w-4" />
-                      <span className="line-clamp-1">{booking.event.location}</span>
+                      {booking.event.maps_link ? (
+                        <a 
+                          href={booking.event.maps_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="line-clamp-1 text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {booking.event.location}
+                        </a>
+                      ) : (
+                        <span className="line-clamp-1">{booking.event.location}</span>
+                      )}
                     </div>
 
                     <div className="flex items-center text-sm text-muted-foreground">
@@ -248,7 +259,18 @@ export function MyBookingsSection({ userId }: MyBookingsSectionProps) {
 
                     <div className="flex items-center text-sm text-muted-foreground">
                       <MapPin className="mr-2 h-4 w-4" />
-                      <span className="line-clamp-1">{booking.event.location}</span>
+                      {booking.event.maps_link ? (
+                        <a 
+                          href={booking.event.maps_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="line-clamp-1 text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {booking.event.location}
+                        </a>
+                      ) : (
+                        <span className="line-clamp-1">{booking.event.location}</span>
+                      )}
                     </div>
 
                     <div className="flex items-center text-sm text-muted-foreground">

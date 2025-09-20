@@ -79,6 +79,7 @@ model Event {
   time         DateTime      @db.Time(6)
   location     String
   address      String
+  mapsLink     String?       @map("maps_link")
   seats        Int
   hostName     String        @map("host_name")
   hostWhatsapp String        @map("host_whatsapp")
