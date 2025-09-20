@@ -10,6 +10,8 @@ import Link from "next/link"
 import { DeleteEventDialog } from "@/components/delete-event-dialog"
 import { ViewAttendeesDialog } from "@/components/view-attendees-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { LoadingWrapper } from "@/components/ui/loading-wrapper"
+import { CardSkeleton } from "@/components/ui/loading-skeleton"
 
 interface Event {
   id: string
@@ -40,6 +42,7 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
   const [events, setEvents] = useState<EventWithBookings[]>([])
   const [loading, setLoading] = useState(true)
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [viewAttendeesEventId, setViewAttendeesEventId] = useState<string | null>(null)
   const { toast } = useToast()
 
@@ -68,6 +71,7 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
   }, [fetchEvents])
 
   const handleDeleteEvent = async (eventId: string) => {
+    setDeleteLoading(true)
     try {
       const response = await fetch(`/api/events/${eventId}`, {
         method: 'DELETE',
@@ -89,8 +93,10 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
         description: "Failed to delete event. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setDeleteLoading(false)
+      setDeleteEventId(null)
     }
-    setDeleteEventId(null)
   }
 
   const getSeatsLeft = (event: EventWithBookings) => {
@@ -103,26 +109,6 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
     return event.bookings.filter((booking) => booking.status === "pending").length
   }
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-muted rounded w-3/4"></div>
-              <div className="h-3 bg-muted rounded w-1/2"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-3 bg-muted rounded"></div>
-                <div className="h-3 bg-muted rounded w-2/3"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
 
   if (events.length === 0) {
     return (
@@ -143,7 +129,11 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <LoadingWrapper 
+        loading={loading} 
+        skeleton={<CardSkeleton count={6} />}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {events.map((event) => {
           const seatsLeft = getSeatsLeft(event)
           const pendingRequests = getPendingRequests(event)
@@ -217,13 +207,14 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
             </Card>
           )
         })}
-      </div>
-
+        </div>
+      </LoadingWrapper>
       <DeleteEventDialog
         open={deleteEventId !== null}
         onOpenChange={(open) => !open && setDeleteEventId(null)}
         onConfirm={() => deleteEventId && handleDeleteEvent(deleteEventId)}
         eventTitle={events.find((e) => e.id === deleteEventId)?.title || ""}
+        loading={deleteLoading}
       />
 
       <ViewAttendeesDialog

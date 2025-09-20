@@ -3,6 +3,7 @@
 import { Menu, User, LogOut, Settings, Calendar } from "lucide-react"
 import Link from "next/link"
 import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -12,10 +13,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
+import { useLoading } from "@/components/ui/loading-provider"
+import { PageSkeletonLoader } from "@/components/ui/page-skeleton-loader"
+import { Loader2 } from "lucide-react"
 
 export function Header() {
   const { data: session, status } = useSession()
   const { toast } = useToast()
+  const { isLoading: globalLoading, setPageLoading } = useLoading()
+  const router = useRouter()
 
   const user = session?.user
   const loading = status === "loading"
@@ -37,8 +43,28 @@ export function Header() {
     }
   }
 
+  const handleDiscoverClick = () => {
+    router.push("/#events")
+  }
+
+  const handleHostEventClick = () => {
+    setPageLoading("host-event", true)
+    router.push("/create-event")
+  }
+
+  const handleDashboardClick = () => {
+    setPageLoading("dashboard", true)
+    router.push("/dashboard")
+  }
+
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
+    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm relative">
+      {/* Global Loading Indicator */}
+      {globalLoading && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-200 overflow-hidden">
+          <div className="h-full bg-blue-600 animate-pulse"></div>
+        </div>
+      )}
       <div className="container mx-auto flex h-20 items-center justify-between px-6">
         <Link href="/" className="flex items-center space-x-2">
           <div
@@ -54,25 +80,25 @@ export function Header() {
 
         <nav className="hidden md:flex items-center">
           <div className="flex items-center bg-white border border-gray-300 rounded-full p-1 shadow-sm">
-            <Link
-              href="/"
+            <button
+              onClick={handleDiscoverClick}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
             >
               Discover
-            </Link>
-            <Link
-              href="/create-event"
+            </button>
+            <button
+              onClick={handleHostEventClick}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
             >
               Host an Event
-            </Link>
+            </button>
             {user && (
-              <Link
-                href="/dashboard"
+              <button
+                onClick={handleDashboardClick}
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
               >
                 Dashboard
-              </Link>
+              </button>
             )}
           </div>
         </nav>
@@ -98,17 +124,13 @@ export function Header() {
                       <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="flex items-center">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Dashboard
-                      </Link>
+                    <DropdownMenuItem onClick={handleDashboardClick} className="flex items-center">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Dashboard
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/create-event" className="flex items-center">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Create Event
-                      </Link>
+                    <DropdownMenuItem onClick={handleHostEventClick} className="flex items-center">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Create Event
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/dashboard/settings" className="flex items-center">
@@ -139,6 +161,9 @@ export function Header() {
           )}
         </div>
       </div>
+      
+      {/* Skeleton Loader for page navigation */}
+      <PageSkeletonLoader loadingKeys={["dashboard", "host-event"]} />
     </header>
   )
 }

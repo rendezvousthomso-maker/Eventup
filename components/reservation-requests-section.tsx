@@ -4,9 +4,11 @@ import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Users, Check, X, Clock } from "lucide-react"
+import { Calendar, MapPin, Users, Check, X, Clock, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
+import { LoadingWrapper } from "@/components/ui/loading-wrapper"
+import { CardSkeleton } from "@/components/ui/loading-skeleton"
 
 interface BookingRequest {
   id: string
@@ -143,26 +145,6 @@ export function ReservationRequestsSection({ userId }: ReservationRequestsSectio
     }
   }
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 gap-6">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-muted rounded w-3/4"></div>
-              <div className="h-3 bg-muted rounded w-1/2"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-3 bg-muted rounded"></div>
-                <div className="h-3 bg-muted rounded w-2/3"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
 
   if (requests.length === 0) {
     return (
@@ -179,7 +161,8 @@ export function ReservationRequestsSection({ userId }: ReservationRequestsSectio
   }
 
   return (
-    <div className="space-y-6">
+    <LoadingWrapper loading={loading} skeleton={<CardSkeleton count={3} />}>
+      <div className="space-y-6">
       {requests.map((request) => {
         const eventDateTime = new Date(`${request.event.date}T${request.event.time}`)
         const requestDate = new Date(request.createdAt)
@@ -232,7 +215,11 @@ export function ReservationRequestsSection({ userId }: ReservationRequestsSectio
                   disabled={processingId === request.id}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
-                  <Check className="mr-2 h-4 w-4" />
+                  {processingId === request.id ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="mr-2 h-4 w-4" />
+                  )}
                   Approve
                 </Button>
                 <Button
@@ -241,7 +228,11 @@ export function ReservationRequestsSection({ userId }: ReservationRequestsSectio
                   variant="outline"
                   className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
                 >
-                  <X className="mr-2 h-4 w-4" />
+                  {processingId === request.id ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <X className="mr-2 h-4 w-4" />
+                  )}
                   Reject
                 </Button>
               </div>
@@ -249,6 +240,7 @@ export function ReservationRequestsSection({ userId }: ReservationRequestsSectio
           </Card>
         )
       })}
-    </div>
+      </div>
+    </LoadingWrapper>
   )
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Heart, Star } from "lucide-react"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { fetchEventImages, getPrimaryEventImage, type EventImage } from "@/lib/event-images"
@@ -87,10 +86,6 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             onLoad={() => setImageLoaded(true)}
           />
-          {/* Favorite Heart Button */}
-          <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors duration-200">
-            <Heart className="h-4 w-4 text-gray-600 hover:text-red-500" />
-          </button>
           {/* Guest Favorite Badge */}
           <div className="absolute top-3 left-3 bg-white px-3 py-1 rounded-full text-xs font-semibold text-gray-800 shadow-sm">
             Popular
@@ -102,10 +97,6 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
           {/* Location and Rating Row */}
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-base font-semibold truncate pr-2 text-foreground">{event.location}</h3>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Star className="h-4 w-4 fill-current text-gray-800" />
-              <span className="text-sm font-medium text-gray-800">4.9</span>
-            </div>
           </div>
 
           {/* Event Name and Host */}

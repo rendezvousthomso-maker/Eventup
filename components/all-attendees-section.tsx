@@ -6,8 +6,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, Clock, UserCheck, X, Check } from "lucide-react"
+import { Users, Clock, UserCheck, X, Check, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { LoadingWrapper } from "@/components/ui/loading-wrapper"
+import { ListSkeleton } from "@/components/ui/loading-skeleton"
 
 interface BookingWithEvent {
   id: string
@@ -33,6 +35,7 @@ interface AllAttendeesSectionProps {
 export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
   const [bookings, setBookings] = useState<BookingWithEvent[]>([])
   const [loading, setLoading] = useState(true)
+  const [processingId, setProcessingId] = useState<string | null>(null)
   const { toast } = useToast()
   // const supabase = createBrowserClient() // Temporarily disabled
 
@@ -62,6 +65,7 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
   }, [fetchAllBookings])
 
   const updateBookingStatus = async (bookingId: string, status: "approved" | "rejected") => {
+    setProcessingId(bookingId)
     try {
       const response = await fetch(`/api/bookings/${bookingId}`, {
         method: 'PATCH',
@@ -88,6 +92,8 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
         description: "Failed to update booking. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setProcessingId(null)
     }
   }
 
@@ -108,23 +114,10 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
   const approvedBookings = bookings.filter((b) => b.status === "approved")
   const rejectedBookings = bookings.filter((b) => b.status === "rejected")
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="p-4">
-              <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
-              <div className="h-3 bg-muted rounded w-1/2"></div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
 
   return (
-    <div className="space-y-6">
+    <LoadingWrapper loading={loading} skeleton={<ListSkeleton count={5} />}>
+      <div className="space-y-6">
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -192,18 +185,28 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
                       <Button
                         size="sm"
                         onClick={() => updateBookingStatus(booking.id, "approved")}
+                        disabled={processingId === booking.id}
                         className="bg-green-600 hover:bg-green-700"
                       >
-                        <Check className="h-4 w-4 mr-1" />
+                        {processingId === booking.id ? (
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4 mr-1" />
+                        )}
                         Approve
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => updateBookingStatus(booking.id, "rejected")}
+                        disabled={processingId === booking.id}
                         className="text-red-600 border-red-200 hover:bg-red-50"
                       >
-                        <X className="h-4 w-4 mr-1" />
+                        {processingId === booking.id ? (
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        ) : (
+                          <X className="h-4 w-4 mr-1" />
+                        )}
                         Reject
                       </Button>
                     </div>
@@ -282,6 +285,7 @@ export function AllAttendeesSection({ userId }: AllAttendeesSectionProps) {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </LoadingWrapper>
   )
 }

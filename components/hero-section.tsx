@@ -1,7 +1,20 @@
+"use client"
+
 // import { Search } from "lucide-react" // Currently unused
-import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useLoading } from "@/components/ui/loading-provider"
+import { Loader2 } from "lucide-react"
 
 export function HeroSection() {
+  const router = useRouter()
+  const { isLoading: globalLoading, setLoading } = useLoading()
+
+  const handleHostEventClick = () => {
+    setLoading("host-event", true)
+    router.push("/create-event")
+    setTimeout(() => setLoading("host-event", false), 500)
+  }
+
   return (
     <section className="relative bg-white py-16 md:py-24">
       <div className="container mx-auto px-6">
@@ -19,19 +32,20 @@ export function HeroSection() {
         </div>
 
         <div className="text-center">
-          <Link href="/create-event">
-            <button
-              className="font-semibold py-4 px-8 rounded-lg text-base transition-all duration-200 hover:scale-105"
-              style={{
-                background: "linear-gradient(135deg, #e61e4d 0%, #e31c5f 100%)",
-                color: "#ffffff",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              Host an Event
-            </button>
-          </Link>
+          <button
+            onClick={handleHostEventClick}
+            disabled={globalLoading}
+            className="font-semibold py-4 px-8 rounded-lg text-base transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center mx-auto"
+            style={{
+              background: "linear-gradient(135deg, #e61e4d 0%, #e31c5f 100%)",
+              color: "#ffffff",
+              border: "none",
+              cursor: globalLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {globalLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+            Host an Event
+          </button>
         </div>
       </div>
     </section>

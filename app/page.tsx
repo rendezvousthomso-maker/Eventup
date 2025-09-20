@@ -7,6 +7,8 @@ import { EventFilters } from "@/components/event-filters"
 import { EventCard } from "@/components/event-card"
 import { Footer } from "@/components/footer"
 import { ReservationPopup } from "@/components/reservation-popup"
+import { EventCardSkeleton } from "@/components/ui/loading-skeleton"
+import { PageLoadingWrapper } from "@/components/ui/loading-wrapper"
 // import { EnhancedSearch } from "@/components/enhanced-search" // Currently unused
 import { useSession } from "next-auth/react"
 
@@ -120,53 +122,40 @@ export default function HomePage() {
       <Header />
       <HeroSection />
 
-      <main className="container mx-auto px-6 py-12">
-        <EventFilters selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
+      <main id="events" className="container mx-auto px-6 py-12">
+        <PageLoadingWrapper loading={loading}>
+          <EventFilters selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
 
-        {loading ? (
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-semibold text-[#222222]">
+              {(() => {
+                const activeCategory = searchFilters.category || selectedCategory
+                const hasFilters = searchFilters.location || searchFilters.date || activeCategory
+                
+                if (hasFilters) {
+                  return "Search Results"
+                }
+                return "Popular events in Bangalore"
+              })()}
+            </h2>
+            <span className="text-[#717171] text-sm">
+              {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""} found
+            </span>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="bg-gray-200 rounded-xl h-64 mb-3"></div>
-                <div className="bg-gray-200 rounded h-4 mb-2"></div>
-                <div className="bg-gray-200 rounded h-4 w-3/4 mb-2"></div>
-                <div className="bg-gray-200 rounded h-4 w-1/2"></div>
-              </div>
+            {filteredEvents.map((event) => (
+              <EventCard key={event.id} event={event} onReserveClick={handleReserveClick} />
             ))}
           </div>
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-semibold text-[#222222]">
-                {(() => {
-                  const activeCategory = searchFilters.category || selectedCategory
-                  const hasFilters = searchFilters.location || searchFilters.date || activeCategory
-                  
-                  if (hasFilters) {
-                    return "Search Results"
-                  }
-                  return "Popular events in Bangalore"
-                })()}
-              </h2>
-              <span className="text-[#717171] text-sm">
-                {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""} found
-              </span>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} onReserveClick={handleReserveClick} />
-              ))}
+          {filteredEvents.length === 0 && !loading && (
+            <div className="text-center py-16">
+              <p className="text-[#717171] text-lg">No events found for the selected category.</p>
+              <p className="text-[#717171] text-sm mt-2">Try selecting a different category or check back later.</p>
             </div>
-
-            {filteredEvents.length === 0 && (
-              <div className="text-center py-16">
-                <p className="text-[#717171] text-lg">No events found for the selected category.</p>
-                <p className="text-[#717171] text-sm mt-2">Try selecting a different category or check back later.</p>
-              </div>
-            )}
-          </>
-        )}
+          )}
+        </PageLoadingWrapper>
       </main>
 
       <Footer />

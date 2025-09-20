@@ -2,13 +2,14 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Calendar, Users, BarChart3, Settings, Menu, Home, Plus, ClipboardList, UserCheck } from "lucide-react"
+import { Calendar, Users, BarChart3, Settings, Menu, Home, Plus, ClipboardList, UserCheck, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useLoading } from "@/components/ui/loading-provider"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
@@ -25,7 +26,22 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [navigating, setNavigating] = useState<string | null>(null)
+  const { isLoading: globalLoading, setPageLoading } = useLoading()
+
+  const handleNavigation = (href: string) => {
+    if (href === pathname) return
+    
+    setNavigating(href)
+    router.push(href)
+    
+    // Clear navigation state after a short delay
+    setTimeout(() => {
+      setNavigating(null)
+    }, 500)
+  }
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col bg-sidebar">
@@ -39,31 +55,43 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <nav className="flex-1 space-y-1 px-4 py-6">
         {navigation.map((item) => {
           const isActive = pathname === item.href
+          const isLoading = navigating === item.href
+          
           return (
-            <Link
+            <button
               key={item.name}
-              href={item.href}
+              onClick={() => handleNavigation(item.href)}
               className={cn(
-                "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 w-full text-left",
                 isActive
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                isLoading && "opacity-75"
               )}
             >
-              <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+              {isLoading ? (
+                <Loader2 className="mr-3 h-5 w-5 flex-shrink-0 animate-spin" />
+              ) : (
+                <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+              )}
               {item.name}
-            </Link>
+              {isLoading && <span className="ml-2 text-xs opacity-75">Loading...</span>}
+            </button>
           )
         })}
       </nav>
 
       <div className="p-4 border-t border-sidebar-border">
-        <Link href="/create-event">
-          <Button className="w-full bg-sidebar-accent hover:bg-sidebar-accent/90 text-sidebar-accent-foreground">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Event
-          </Button>
-        </Link>
+        <Button 
+          onClick={() => {
+            setPageLoading("host-event", true)
+            router.push("/create-event")
+          }}
+          className="w-full bg-sidebar-accent hover:bg-sidebar-accent/90 text-sidebar-accent-foreground"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Create Event
+        </Button>
       </div>
     </div>
   )

@@ -8,6 +8,8 @@ import { Calendar, MapPin, Users, CheckCircle, XCircle, AlertCircle } from "luci
 import Link from "next/link"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
+import { LoadingWrapper } from "@/components/ui/loading-wrapper"
+import { CardSkeleton } from "@/components/ui/loading-skeleton"
 
 interface MyBooking {
   id: string
@@ -91,26 +93,6 @@ export function MyBookingsSection({ userId }: MyBookingsSectionProps) {
     return eventDateTime < new Date()
   }
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-muted rounded w-3/4"></div>
-              <div className="h-3 bg-muted rounded w-1/2"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-3 bg-muted rounded"></div>
-                <div className="h-3 bg-muted rounded w-2/3"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
 
   if (bookings.length === 0) {
     return (
@@ -138,7 +120,8 @@ export function MyBookingsSection({ userId }: MyBookingsSectionProps) {
   )
 
   return (
-    <div className="space-y-8">
+    <LoadingWrapper loading={loading} skeleton={<CardSkeleton count={6} />}>
+      <div className="space-y-8">
       {/* Upcoming Bookings */}
       {upcomingBookings.length > 0 && (
         <div>
@@ -261,6 +244,7 @@ export function MyBookingsSection({ userId }: MyBookingsSectionProps) {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </LoadingWrapper>
   )
 }

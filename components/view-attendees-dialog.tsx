@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Check, X, Users, Clock, UserCheck } from "lucide-react"
+import { Check, X, Users, Clock, UserCheck, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { ListSkeleton } from "@/components/ui/loading-skeleton"
 
 interface Booking {
   id: string
@@ -36,6 +37,7 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
   const [bookings, setBookings] = useState<Booking[]>([])
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(false)
+  const [processingId, setProcessingId] = useState<string | null>(null)
   const { toast } = useToast()
 
   const fetchEventAndBookings = useCallback(async () => {
@@ -72,6 +74,7 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
   }, [eventId, open, fetchEventAndBookings])
 
   const updateBookingStatus = async (bookingId: string, status: "CONFIRMED" | "CANCELLED") => {
+    setProcessingId(bookingId)
     try {
       const response = await fetch(`/api/bookings/${bookingId}`, {
         method: 'PATCH',
@@ -98,6 +101,8 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
         description: "Failed to update booking. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setProcessingId(null)
     }
   }
 
@@ -137,16 +142,7 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
         </DialogHeader>
 
         {loading ? (
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-4">
-                  <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
-                  <div className="h-3 bg-muted rounded w-1/2"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ListSkeleton count={3} />
         ) : (
           <div className="space-y-6">
             {/* Stats Overview */}
@@ -224,18 +220,28 @@ export function ViewAttendeesDialog({ open, onOpenChange, eventId }: ViewAttende
                                 <Button
                                   size="sm"
                                   onClick={() => updateBookingStatus(booking.id, "CONFIRMED")}
+                                  disabled={processingId === booking.id}
                                   className="bg-green-600 hover:bg-green-700"
                                 >
-                                  <Check className="h-4 w-4 mr-1" />
+                                  {processingId === booking.id ? (
+                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Check className="h-4 w-4 mr-1" />
+                                  )}
                                   Approve
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => updateBookingStatus(booking.id, "CANCELLED")}
+                                  disabled={processingId === booking.id}
                                   className="text-red-600 border-red-200 hover:bg-red-50"
                                 >
-                                  <X className="h-4 w-4 mr-1" />
+                                  {processingId === booking.id ? (
+                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <X className="h-4 w-4 mr-1" />
+                                  )}
                                   Reject
                                 </Button>
                               </div>
