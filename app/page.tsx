@@ -143,34 +143,13 @@ export default function HomePage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredEvents.map((event) => (
-              <EventCard key={event.id} event={event} onReserveClick={handleReserveClick} />
-            ))}
-          </div>
-<<<<<<< Updated upstream
-=======
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-semibold text-[#222222]">
-                {(() => {
-                  const activeCategory = searchFilters.category || selectedCategory
-                  const hasFilters = searchFilters.location || searchFilters.date || activeCategory
-                  
-                  if (hasFilters) {
-                    return "Search Results"
-                  }
-                  return "Popular events in Bangalore"
-                })()}
-              </h2>
-              {/* <span className="text-[#717171] text-sm">
-                {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""} found
-              </span> */}
+          {filteredEvents.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredEvents.map((event) => (
+                <EventCard key={event.id} event={event} onReserveClick={handleReserveClick} />
+              ))}
             </div>
->>>>>>> Stashed changes
-
-          {filteredEvents.length === 0 && !loading && (
+          ) : (
             <div className="text-center py-16">
               <p className="text-[#717171] text-lg">No events found for the selected category.</p>
               <p className="text-[#717171] text-sm mt-2">Try selecting a different category or check back later.</p>

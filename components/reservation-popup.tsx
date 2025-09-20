@@ -4,13 +4,9 @@ import { useState, useEffect } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-<<<<<<< Updated upstream
-import { Minus, Plus, Users, Loader2 } from "lucide-react"
+import { Calendar, Clock, MapPin, Minus, Plus, Share2, Users, Loader2 } from "lucide-react"
 // import { useSession } from "next-auth/react" // Currently unused
-=======
-import { Calendar, Clock, MapPin, Minus, Plus, Share2, Users } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
->>>>>>> Stashed changes
 import { useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { openWhatsApp } from "@/lib/whatsapp"
