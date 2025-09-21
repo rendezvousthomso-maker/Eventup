@@ -87,16 +87,23 @@ class CloudflareR2Service {
         Bucket: this.bucketName,
         Key: key,
         ContentType: contentType,
+        // Ensure proper content type for browser uploads
+        Metadata: {
+          'original-content-type': contentType
+        },
         // Note: R2 doesn't support ACL in presigned URLs
       });
 
       const presignedUrl = await getSignedUrl(this.s3Client, command, { 
-        expiresIn
+        expiresIn,
+        // Ensure the URL is properly formatted for browser uploads
+        signableHeaders: new Set(['host', 'content-type'])
       });
 
       console.log('Generated presigned URL for key:', key);
       console.log('Content-Type:', contentType);
       console.log('Expires in:', expiresIn);
+      console.log('Presigned URL (first 100 chars):', presignedUrl.substring(0, 100) + '...');
       
       return presignedUrl;
     } catch (error) {
@@ -106,7 +113,9 @@ class CloudflareR2Service {
         message: error instanceof Error ? error.message : 'Unknown error',
         bucketName: this.bucketName,
         key,
-        contentType
+        contentType,
+        accountId: process.env.CLOUDFLARE_R2_ACCOUNT_ID,
+        endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
       });
       throw new Error('Failed to generate upload URL');
     }

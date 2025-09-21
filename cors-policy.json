@@ -10,15 +10,28 @@
       "PUT",
       "POST",
       "DELETE",
-      "HEAD",
-      "OPTIONS"
+      "HEAD"
     ],
     "AllowedHeaders": [
-      "*"
+      "*",
+      "Content-Type",
+      "Authorization",
+      "x-amz-content-sha256",
+      "x-amz-date",
+      "x-amz-algorithm",
+      "x-amz-credential",
+      "x-amz-signature",
+      "x-amz-signedheaders",
+      "x-amz-expires",
+      "x-amz-checksum-crc32",
+      "x-amz-sdk-checksum-algorithm"
     ],
     "ExposeHeaders": [
       "ETag",
-      "x-amz-request-id"
+      "x-amz-request-id",
+      "x-amz-id-2",
+      "x-amz-version-id",
+      "x-amz-checksum-crc32"
     ],
     "MaxAgeSeconds": 3600
   }
