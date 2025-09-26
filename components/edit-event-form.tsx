@@ -117,40 +117,21 @@ export function EditEventForm({ event }: EditEventFormProps) {
     if (!selectedImageFile) return null
 
     try {
-      // Step 1: Request pre-signed URL from backend
-      const presignedResponse = await fetch('/api/upload/presigned-url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/events/upload?filename=${selectedImageFile.name}&eventId=${eventId}`,
+        {
+          method: 'POST',
+          body: selectedImageFile,
         },
-        body: JSON.stringify({
-          filename: selectedImageFile.name,
-          contentType: selectedImageFile.type,
-          eventId: eventId
-        }),
-      })
+      )
 
-      if (!presignedResponse.ok) {
-        const error = await presignedResponse.json()
-        throw new Error(error.error || 'Failed to get upload URL')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to upload image')
       }
 
-      const { presignedUrl, publicUrl } = await presignedResponse.json()
-
-      // Step 2: Upload directly to R2 using pre-signed URL
-      const uploadResponse = await fetch(presignedUrl, {
-        method: 'PUT',
-        body: selectedImageFile,
-        headers: {
-          'Content-Type': selectedImageFile.type,
-        },
-      })
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload to storage')
-      }
-
-      return publicUrl
+      const result = await response.json()
+      return result.url
     } catch (error) {
       console.error('Image upload error:', error)
       throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`)

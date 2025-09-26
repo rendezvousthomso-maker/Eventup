@@ -4,7 +4,15 @@ import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { } from "lucide-react"
-import { fetchEventImages, getPrimaryEventImage, type EventImage } from "@/lib/event-images"
+
+interface EventImage {
+  key: string
+  filename: string
+  publicUrl: string
+  lastModified: Date
+  size: number
+  originalName: string
+}
 
 interface Event {
   id: string
@@ -35,8 +43,11 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
   useEffect(() => {
     const loadEventImages = async () => {
       try {
-        const images = await fetchEventImages(event.id)
-        setEventImages(images)
+        const response = await fetch(`/api/events/${event.id}/images`)
+        if (response.ok) {
+          const data = await response.json()
+          setEventImages(data.images || [])
+        }
       } catch (error) {
         console.error('Failed to load event images:', error)
       }
@@ -44,6 +55,12 @@ export function EventCard({ event, onReserveClick }: EventCardProps) {
 
     loadEventImages()
   }, [event.id])
+
+  const getPrimaryEventImage = (images: EventImage[]): EventImage | null => {
+    if (!images || images.length === 0) return null
+    // Return the first image (newest due to sorting in API)
+    return images[0]
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {

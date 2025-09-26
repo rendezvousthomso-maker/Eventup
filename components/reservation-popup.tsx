@@ -11,7 +11,15 @@ import { useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { openWhatsApp } from "@/lib/whatsapp"
 import Image from "next/image"
-import { fetchEventImages, getPrimaryEventImage, type EventImage } from "@/lib/event-images"
+// EventImage interface for Vercel Blob
+interface EventImage {
+  key: string
+  filename: string
+  publicUrl: string
+  lastModified: Date
+  size: number
+  originalName: string
+}
 
 interface Event {
   id: string
@@ -50,8 +58,11 @@ export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPo
     if (event) {
       const loadEventImages = async () => {
         try {
-          const images = await fetchEventImages(event.id)
-          setEventImages(images)
+          const response = await fetch(`/api/events/${event.id}/images`)
+          if (response.ok) {
+            const data = await response.json()
+            setEventImages(data.images || [])
+          }
         } catch (error) {
           console.error('Failed to load event images:', error)
         }
@@ -145,7 +156,7 @@ export function ReservationPopup({ event, isOpen, onClose, user }: ReservationPo
         <div className="relative w-full h-[200px] sm:h-[300px] rounded-t-lg overflow-hidden">
           <Image
             src={(() => {
-              const primaryImage = getPrimaryEventImage(eventImages)
+              const primaryImage = eventImages.length > 0 ? eventImages[0] : null
               return primaryImage?.publicUrl || event.image_url || "/placeholder.svg?height=300&width=600&query=event"
             })()}
             alt={event.name}

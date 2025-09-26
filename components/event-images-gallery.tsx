@@ -1,7 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { fetchEventImages, type EventImage } from "@/lib/event-images"
+// EventImage interface for Vercel Blob
+interface EventImage {
+  key: string
+  filename: string
+  publicUrl: string
+  lastModified: Date
+  size: number
+  originalName: string
+}
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight } from "lucide-react"
@@ -22,8 +30,11 @@ export function EventImagesGallery({ eventId, className }: EventImagesGalleryPro
     const loadImages = async () => {
       setLoading(true)
       try {
-        const eventImages = await fetchEventImages(eventId)
-        setImages(eventImages)
+        const response = await fetch(`/api/events/${eventId}/images`)
+        if (response.ok) {
+          const data = await response.json()
+          setImages(data.images || [])
+        }
       } catch (error) {
         console.error('Failed to load event images:', error)
       } finally {

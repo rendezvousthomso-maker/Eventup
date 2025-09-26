@@ -108,52 +108,21 @@ export function EventForm() {
     if (!selectedImageFile) return null
 
     try {
-      // Step 1: Request pre-signed URL from backend
-      const presignedResponse = await fetch('/api/upload/presigned-url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/events/upload?filename=${selectedImageFile.name}&eventId=${eventId}`,
+        {
+          method: 'POST',
+          body: selectedImageFile,
         },
-        body: JSON.stringify({
-          filename: selectedImageFile.name,
-          contentType: selectedImageFile.type,
-          eventId: eventId
-        }),
-      })
+      )
 
-      if (!presignedResponse.ok) {
-        const error = await presignedResponse.json()
-        throw new Error(error.error || 'Failed to get upload URL')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to upload image')
       }
 
-      const { presignedUrl, publicUrl } = await presignedResponse.json()
-
-      // Step 2: Upload directly to R2 using pre-signed URL
-      const uploadResponse = await fetch(presignedUrl, {
-        method: 'PUT',
-        body: selectedImageFile,
-        headers: {
-          'Content-Type': selectedImageFile.type,
-        },
-      })
-
-      if (!uploadResponse.ok) {
-        const responseText = await uploadResponse.text()
-        console.error('Upload failed:', {
-          status: uploadResponse.status,
-          statusText: uploadResponse.statusText,
-          headers: Object.fromEntries(uploadResponse.headers.entries()),
-          body: responseText
-        })
-        
-        if (uploadResponse.status === 0 || uploadResponse.status === 403) {
-          throw new Error('CORS error: Please configure CORS policy for your R2 bucket. See TROUBLESHOOTING_R2_CORS.md')
-        } else {
-          throw new Error(`Upload failed with status ${uploadResponse.status}: ${responseText || uploadResponse.statusText}`)
-        }
-      }
-
-      return publicUrl
+      const result = await response.json()
+      return result.url
     } catch (error) {
       console.error('Image upload error:', error)
       throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`)

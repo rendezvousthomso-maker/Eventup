@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cloudflareR2 } from '@/lib/cloudflare-r2';
+import { list } from '@vercel/blob';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -9,36 +9,22 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Event ID is required' }, { status: 400 });
     }
 
-    // Check if R2 is configured
-    const isR2Configured = process.env.CLOUDFLARE_R2_ACCOUNT_ID && 
-                          process.env.CLOUDFLARE_R2_ACCESS_KEY_ID && 
-                          process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY && 
-                          process.env.CLOUDFLARE_R2_BUCKET_NAME;
+    // List all blobs with the event prefix
+    const { blobs } = await list({
+      prefix: `events/${eventId}/`,
+    });
 
-    if (!isR2Configured) {
-      return NextResponse.json({ 
-        success: true, 
-        images: [],
-        count: 0,
-        message: 'R2 not configured'
-      });
-    }
-
-    // List all files for this event from R2
-    const r2Images = await cloudflareR2.listEventImages(eventId);
-
-    // Generate public URLs for each image
-    const imagesWithUrls = r2Images.map(image => {
-      const filename = image.key.split('/').pop() || 'unknown';
-      const publicUrl = cloudflareR2.getPublicUrl(image.key);
+    // Transform blobs to match the expected format
+    const imagesWithUrls = blobs.map(blob => {
+      const filename = blob.pathname.split('/').pop() || 'unknown';
       
       return {
-        key: image.key,
+        key: blob.pathname,
         filename,
-        publicUrl,
-        lastModified: image.lastModified,
-        size: image.size,
-        // Extract original filename from the key if possible
+        publicUrl: blob.url,
+        lastModified: new Date(blob.uploadedAt),
+        size: blob.size,
+        // Extract original filename from the pathname if possible
         originalName: filename.includes('_') ? filename.split('_').slice(1).join('_') : filename
       };
     });
@@ -55,20 +41,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   } catch (error) {
     console.error('Error fetching event images:', error);
     
-    // More detailed error logging
-    console.error('Event ID:', eventId);
-    console.error('R2 Config Check:', {
-      accountId: !!process.env.CLOUDFLARE_R2_ACCOUNT_ID,
-      accessKeyId: !!process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
-      secretAccessKey: !!process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
-      bucketName: process.env.CLOUDFLARE_R2_BUCKET_NAME
-    });
-    
     return NextResponse.json(
       { 
         error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error',
-        eventId 
+        eventId: params.id
       },
       { status: 500 }
     );
