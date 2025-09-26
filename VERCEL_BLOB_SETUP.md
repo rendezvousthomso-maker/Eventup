@@ -23,11 +23,23 @@ yarn add @vercel/blob
 ```
 
 ### 2. Environment Variables
-No additional environment variables are needed! Vercel Blob works automatically when deployed to Vercel.
+You need to set the `IMAGE_READ_WRITE_TOKEN` environment variable:
 
-For local development, you can:
-- Use Vercel CLI: `vercel dev`
-- Or deploy to Vercel for testing
+1. **Get your Blob token:**
+   - Go to your Vercel project dashboard
+   - Navigate to Settings → Storage → Blob
+   - Copy the `BLOB_READ_WRITE_TOKEN`
+
+2. **Set the environment variable:**
+   - **For Vercel deployment:** Add it in your project's Environment Variables settings as `IMAGE_READ_WRITE_TOKEN`
+   - **For local development:** Add it to your `.env.local` file:
+     ```
+     IMAGE_READ_WRITE_TOKEN="your-token-here"
+     ```
+
+3. **Alternative for local development:**
+   - Use Vercel CLI: `vercel env pull` to sync environment variables
+   - Or use `vercel dev` instead of `next dev`
 
 ### 3. API Routes
 The following API routes are available:

@@ -12,6 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     // List all blobs with the event prefix
     const { blobs } = await list({
       prefix: `events/${eventId}/`,
+      token: process.env.IMAGE_READ_WRITE_TOKEN,
     });
 
     // Transform blobs to match the expected format

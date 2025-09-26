@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
     const blob = await put(uniqueFilename, file, {
       access: 'public',
       contentType: `image/${extension}`,
+      token: process.env.IMAGE_READ_WRITE_TOKEN,
     });
 
     return NextResponse.json({
