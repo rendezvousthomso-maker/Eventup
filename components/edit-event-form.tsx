@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { LocationInput } from "@/components/location-input"
-import { ImageUploadR2 } from "@/components/image-upload-r2"
+import { ImageUpload } from "@/components/image-upload"
 import { CalendarIcon, MapPinIcon, PhoneIcon, ImageIcon, Loader2 } from "lucide-react"
 import Link from "next/link"
 
@@ -295,9 +295,9 @@ export function EditEventForm({ event }: EditEventFormProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ImageUploadR2 
+              <ImageUpload 
                 onImageSelect={handleImageSelect} 
-                currentImageUrl={formData.image_url}
+                selectedImage={selectedImageFile}
                 disabled={loading} 
               />
               {formData.image_url && !selectedImageFile && (

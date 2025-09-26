@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CalendarIcon, MapPinIcon, UsersIcon, PhoneIcon, ImageIcon, CheckCircleIcon, Loader2 } from "lucide-react"
 import { LocationInput } from "@/components/location-input"
-import { ImageUploadR2 } from "@/components/image-upload-r2"
+import { ImageUpload } from "@/components/image-upload"
 import { validateForm, commonValidations, type ValidationRules } from "@/components/form-validation"
 
 interface EventFormData {
@@ -420,7 +420,7 @@ export function EventForm() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ImageUploadR2 onImageSelect={handleImageSelect} disabled={isLoading} />
+              <ImageUpload onImageSelect={handleImageSelect} selectedImage={selectedImageFile} disabled={isLoading} />
             </CardContent>
           </Card>
         </div>
