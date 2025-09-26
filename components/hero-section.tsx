@@ -35,7 +35,7 @@ export function HeroSection() {
           <button
             onClick={handleHostEventClick}
             disabled={globalLoading}
-            className="font-semibold py-4 px-8 rounded-lg text-base transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center mx-auto"
+            className="primary py-4 px-8 rounded-lg text-base transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center mx-auto"
             style={{
               background: "linear-gradient(135deg, #e61e4d 0%, #e31c5f 100%)",
               color: "#ffffff",

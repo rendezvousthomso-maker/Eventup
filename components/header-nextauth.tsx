@@ -135,11 +135,11 @@ export function Header() {
                 <div className="flex items-center space-x-2">
                   <Link href="/auth/login">
                     <Button variant="ghost" size="sm">
-                      Sign In
+                      Sign Ik
                     </Button>
                   </Link>
                   <Link href="/auth/sign-up">
-                    <Button size="sm">Sign Up</Button>
+                    <Button size="sm">Host an Event</Button>
                   </Link>
                 </div>
               )}

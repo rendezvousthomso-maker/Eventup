@@ -87,9 +87,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             setPageLoading("host-event", true)
             router.push("/create-event")
           }}
-          className="w-full bg-sidebar-accent hover:bg-sidebar-accent/90 text-sidebar-accent-foreground"
+          className=" primary w-full"
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className=" h-4 w-4" />
           Create Event
         </Button>
       </div>
@@ -103,21 +103,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <SidebarContent />
       </div>
 
-      {/* Mobile Sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="lg:hidden fixed top-4 left-4 z-50">
-            <Menu className="h-6 w-6" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-40 flex items-center justify-between px-4">
+        <div className="flex items-center space-x-2">
+          <Home className="h-6 w-6" />
+          <span className="text-lg font-bold">EventHub</span>
+        </div>
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="p-0 w-64">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 pt-20 lg:pt-8 lg:p-8">{children}</main>
       </div>
     </div>
   )

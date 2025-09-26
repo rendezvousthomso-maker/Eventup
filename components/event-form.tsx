@@ -433,11 +433,11 @@ export function EventForm() {
       )}
 
       {/* Submit Button - Pinned at bottom on mobile */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 -mx-4 lg:static lg:bg-transparent lg:border-0 lg:p-0 lg:mx-0">
+      <div className="w-full sticky bottom-0 bg-white border-t border-gray-200 p-4 -mx-4 lg:static lg:bg-transparent lg:border-0 lg:p-0 lg:mx-0">
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full lg:w-auto bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white px-8 py-3"
+          className="primary"
         >
           {isLoading ? "Creating Event..." : "Create Event"}
         </Button>
