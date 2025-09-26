@@ -7,7 +7,7 @@ import { PageLoadingIndicator } from '@/components/ui/page-loading-indicator'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
+  title: 'EventUp',
   description: 'Created with v0',
   generator: 'v0.app',
 }
