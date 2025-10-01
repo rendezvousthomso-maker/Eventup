@@ -133,7 +133,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      <Header pendingEventsCount={pendingEventsCount} />
       <HeroSection pendingEventsCount={pendingEventsCount} isAuthenticated={!!session?.user} />
 
       <main id="events" className="container mx-auto px-6 py-12">

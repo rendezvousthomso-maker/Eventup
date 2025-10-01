@@ -17,7 +17,11 @@ import { useLoading } from "@/components/ui/loading-provider"
 import { PageSkeletonLoader } from "@/components/ui/page-skeleton-loader"
 import { Loader2 } from "lucide-react"
 
-export function Header() {
+interface HeaderProps {
+  pendingEventsCount?: number
+}
+
+export function Header({ pendingEventsCount = 0 }: HeaderProps) {
   const { data: session, status } = useSession()
   const { toast } = useToast()
   const { isLoading: globalLoading, setPageLoading } = useLoading()
@@ -25,6 +29,7 @@ export function Header() {
 
   const user = session?.user
   const loading = status === "loading"
+  const isHostButtonDisabled = !!user && pendingEventsCount >= 2
 
   const handleSignOut = async () => {
     try {
@@ -48,6 +53,14 @@ export function Header() {
   }
 
   const handleHostEventClick = () => {
+    if (isHostButtonDisabled) {
+      toast({
+        title: "Cannot create event",
+        description: "You already have 2 events pending approval. Please wait for admin approval.",
+        variant: "destructive",
+      })
+      return
+    }
     setPageLoading("host-event", true)
     router.push("/create-event")
   }
@@ -88,7 +101,13 @@ export function Header() {
             </button>
             <button
               onClick={handleHostEventClick}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
+              disabled={isHostButtonDisabled}
+              className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                isHostButtonDisabled
+                  ? 'text-gray-400 cursor-not-allowed opacity-50'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+              title={isHostButtonDisabled ? 'You have 2 events pending approval' : ''}
             >
               Host an Event
             </button>
@@ -128,9 +147,14 @@ export function Header() {
                       <Calendar className="mr-2 h-4 w-4" />
                       Dashboard
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleHostEventClick} className="flex items-center">
+                    <DropdownMenuItem 
+                      onClick={handleHostEventClick} 
+                      disabled={isHostButtonDisabled}
+                      className={`flex items-center ${isHostButtonDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
                       <Calendar className="mr-2 h-4 w-4" />
                       Create Event
+                      {isHostButtonDisabled && <span className="ml-auto text-xs text-amber-600">(2 pending)</span>}
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/dashboard/settings" className="flex items-center">
