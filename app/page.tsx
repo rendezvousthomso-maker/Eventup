@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { HeroSection } from "@/components/hero-section"
@@ -34,7 +34,28 @@ interface Event {
   image_url?: string
 }
 
-export default function HomePage() {
+// Component that uses useSearchParams - must be wrapped in Suspense
+function ImageUploadNotification() {
+  const searchParams = useSearchParams()
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const imageUploadFailed = searchParams.get('imageUploadFailed')
+    if (imageUploadFailed === 'true') {
+      toast({
+        title: "Event created successfully",
+        description: "Your event has been submitted for approval, but the image upload failed. You can edit the event later to add an image.",
+        variant: "default",
+      })
+      // Clean up URL
+      window.history.replaceState({}, '', '/')
+    }
+  }, [searchParams, toast])
+
+  return null
+}
+
+function HomePageContent() {
   const [events, setEvents] = useState<Event[]>([])
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -50,22 +71,6 @@ export default function HomePage() {
   const [isAdmin, setIsAdmin] = useState(false)
   
   const { data: session } = useSession()
-  const searchParams = useSearchParams()
-  const { toast } = useToast()
-
-  // Check for image upload failure notification
-  useEffect(() => {
-    const imageUploadFailed = searchParams.get('imageUploadFailed')
-    if (imageUploadFailed === 'true') {
-      toast({
-        title: "Event created successfully",
-        description: "Your event has been submitted for approval, but the image upload failed. You can edit the event later to add an image.",
-        variant: "default",
-      })
-      // Clean up URL
-      window.history.replaceState({}, '', '/')
-    }
-  }, [searchParams, toast])
 
   useEffect(() => {
     fetchEvents()
@@ -219,6 +224,18 @@ export default function HomePage() {
       <Footer />
 
       <ReservationPopup event={selectedEvent} isOpen={isReservationOpen} onClose={handleReservationClose} user={session?.user || null} />
+      
+      <Suspense fallback={null}>
+        <ImageUploadNotification />
+      </Suspense>
     </div>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center">Loading...</div>}>
+      <HomePageContent />
+    </Suspense>
   )
 }
