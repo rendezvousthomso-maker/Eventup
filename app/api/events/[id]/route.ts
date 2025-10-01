@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const event = await prisma.event.findUnique({
@@ -87,7 +89,15 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Verify the event belongs to the current user
+    // Get current user's type
+    const currentUser = await prisma.user.findUnique({
+      where: { id: (session as any).user.id },
+      select: { userType: true }
+    })
+
+    const userType = currentUser?.userType ? String(currentUser.userType) : 'USER'
+
+    // Verify the event exists
     const event = await prisma.event.findUnique({
       where: { id: params.id },
       select: { hostId: true }
@@ -97,8 +107,12 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    if (event.hostId !== (session as any).user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+    // Allow deletion if user is the host OR if user is an admin
+    const isHost = event.hostId === (session as any).user.id
+    const isAdmin = userType === 'ADMIN'
+
+    if (!isHost && !isAdmin) {
+      return NextResponse.json({ error: "Unauthorized: Only the event host or an admin can delete this event" }, { status: 403 })
     }
 
     // Delete the event (related bookings will be deleted due to CASCADE)
