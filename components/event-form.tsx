@@ -196,34 +196,49 @@ export function EventForm() {
 
       const createdEvent = await eventResponse.json()
 
-      // Upload image if selected
+      // Upload image if selected (but don't fail event creation if upload fails)
       let imageUrl: string | null = null
+      let imageUploadFailed = false
+      
       if (selectedImageFile) {
-        imageUrl = await uploadImageIfSelected(createdEvent.id)
-        
-        // Update event with image URL
-        const updateResponse = await fetch(`/api/events/${createdEvent.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...formData,
-            imageUrl: imageUrl,
-            hostName: session.user.name || 'Anonymous',
-          }),
-        })
+        try {
+          imageUrl = await uploadImageIfSelected(createdEvent.id)
+          
+          // Update event with image URL
+          const updateResponse = await fetch(`/api/events/${createdEvent.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...formData,
+              imageUrl: imageUrl,
+              hostName: session.user.name || 'Anonymous',
+            }),
+          })
 
-        if (!updateResponse.ok) {
-          console.warn('Failed to update event with image URL')
+          if (!updateResponse.ok) {
+            console.warn('Failed to update event with image URL')
+            imageUploadFailed = true
+          }
+        } catch (imageError) {
+          // Log the error but continue with event creation
+          console.error('Image upload failed:', imageError)
+          imageUploadFailed = true
         }
       }
 
       setSuccess(true)
 
+      // Show warning if image upload failed but event was created
+      if (imageUploadFailed) {
+        // Note: We'll show this after redirect on the home page via URL parameter
+        console.warn('Event created successfully but image upload failed')
+      }
+
       // Redirect after a short delay to show success message
       setTimeout(() => {
-        router.push("/")
+        router.push(imageUploadFailed ? "/?imageUploadFailed=true" : "/")
       }, 2000)
     } catch (error: unknown) {
       setErrors({ submit: error instanceof Error ? error.message : "An error occurred" })

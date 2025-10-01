@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { HeroSection } from "@/components/hero-section"
 import { EventFilters } from "@/components/event-filters"
@@ -11,6 +12,7 @@ import { EventCardSkeleton } from "@/components/ui/loading-skeleton"
 import { PageLoadingWrapper } from "@/components/ui/loading-wrapper"
 // import { EnhancedSearch } from "@/components/enhanced-search" // Currently unused
 import { useSession } from "next-auth/react"
+import { useToast } from "@/hooks/use-toast"
 
 interface SearchFilters {
   location: string
@@ -45,13 +47,31 @@ export default function HomePage() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isReservationOpen, setIsReservationOpen] = useState(false)
   const [pendingEventsCount, setPendingEventsCount] = useState(0)
+  const [isAdmin, setIsAdmin] = useState(false)
   
   const { data: session } = useSession()
+  const searchParams = useSearchParams()
+  const { toast } = useToast()
+
+  // Check for image upload failure notification
+  useEffect(() => {
+    const imageUploadFailed = searchParams.get('imageUploadFailed')
+    if (imageUploadFailed === 'true') {
+      toast({
+        title: "Event created successfully",
+        description: "Your event has been submitted for approval, but the image upload failed. You can edit the event later to add an image.",
+        variant: "default",
+      })
+      // Clean up URL
+      window.history.replaceState({}, '', '/')
+    }
+  }, [searchParams, toast])
 
   useEffect(() => {
     fetchEvents()
     if (session?.user) {
       fetchPendingCount()
+      fetchUserType()
     }
   }, [session])
 
@@ -111,6 +131,24 @@ export default function HomePage() {
     }
   }
 
+  const fetchUserType = async () => {
+    try {
+      const response = await fetch('/api/user/type')
+      if (response.ok) {
+        const data = await response.json()
+        setIsAdmin(data.userType === 'ADMIN')
+      }
+    } catch (error) {
+      console.error("Error fetching user type:", error)
+    }
+  }
+
+  const handleDeleteEvent = (eventId: string) => {
+    // Remove the deleted event from both events and filteredEvents
+    setEvents(prev => prev.filter(e => e.id !== eventId))
+    setFilteredEvents(prev => prev.filter(e => e.id !== eventId))
+  }
+
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category)
     setSearchFilters(prev => ({ ...prev, category: null })) // Clear search category when using filter buttons
@@ -160,7 +198,13 @@ export default function HomePage() {
           {filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} onReserveClick={handleReserveClick} />
+                <EventCard 
+                  key={event.id} 
+                  event={event} 
+                  onReserveClick={handleReserveClick}
+                  isAdmin={isAdmin}
+                  onDelete={handleDeleteEvent}
+                />
               ))}
             </div>
           ) : (
