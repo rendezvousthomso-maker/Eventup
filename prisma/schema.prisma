@@ -51,6 +51,7 @@ model User {
   emailVerified DateTime?    @db.Timestamptz(6)
   createdAt     DateTime?    @default(now()) @db.Timestamptz(6)
   updatedAt     DateTime?    @default(now()) @updatedAt @db.Timestamptz(6)
+  userType      user_type?   @default(USER) @map("usertype")
   accounts      Account[]
   bookings      Booking[]
   eventImages   EventImage[]
@@ -86,6 +87,7 @@ model Event {
   imageUrl     String?       @map("image_url")
   createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  status       event_status? @default(created)
   bookings     Booking[]
   eventImages  EventImage[]
   host         User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
@@ -95,11 +97,11 @@ model Event {
   @@index([date], map: "idx_events_date")
   @@index([hostId], map: "idx_events_host_id")
   @@index([location], map: "idx_events_location")
-  // Compound indexes for common query patterns
+  @@index([status], map: "idx_events_status")
   @@index([date, category], map: "idx_events_date_category")
   @@index([category, date], map: "idx_events_category_date")
   @@index([hostId, date], map: "idx_events_host_date")
-  // Text search will be handled via raw SQL migration for full-text search
+  @@index([hostId, status], map: "idx_events_host_status")
   @@map("events")
 }
 
@@ -119,7 +121,6 @@ model Booking {
   @@index([eventId], map: "idx_bookings_event_id")
   @@index([status], map: "idx_bookings_status")
   @@index([userId], map: "idx_bookings_user_id")
-  // Compound indexes for common query patterns
   @@index([eventId, status], map: "idx_bookings_event_status")
   @@index([userId, createdAt], map: "idx_bookings_user_created")
   @@index([status, createdAt], map: "idx_bookings_status_created")
@@ -144,7 +145,6 @@ model EventImage {
   @@index([eventId], map: "idx_event_images_event_id")
   @@index([isPrimary], map: "idx_event_images_is_primary")
   @@index([userId], map: "idx_event_images_user_id")
-  // Compound index for finding primary images by event
   @@index([eventId, isPrimary], map: "idx_event_images_event_primary")
   @@map("event_images")
 }
@@ -163,4 +163,14 @@ enum BookingStatus {
   CANCELLED @map("cancelled")
 
   @@map("booking_status")
+}
+
+enum event_status {
+  approved
+  created
+}
+
+enum user_type {
+  ADMIN
+  USER
 }

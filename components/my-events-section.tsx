@@ -27,6 +27,7 @@ interface Event {
   seats_confirmed?: number
   image_url?: string
   created_at: string
+  status?: string
 }
 
 interface EventWithBookings extends Event {
@@ -154,9 +155,21 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg line-clamp-2">{event.title}</CardTitle>
-                    <Badge variant={isUpcoming ? "default" : "secondary"} className="mt-2">
-                      {event.category}
-                    </Badge>
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      <Badge variant={isUpcoming ? "default" : "secondary"}>
+                        {event.category}
+                      </Badge>
+                      {event.status === 'created' && (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
+                          Pending Approval
+                        </Badge>
+                      )}
+                      {event.status === 'approved' && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                          Approved
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardHeader>

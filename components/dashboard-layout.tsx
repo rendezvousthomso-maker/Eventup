@@ -5,19 +5,21 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Calendar, Users, BarChart3, Settings, Menu, Home, Plus, ClipboardList, UserCheck, Loader2 } from "lucide-react"
+import { Calendar, Users, BarChart3, Settings, Menu, Home, Plus, ClipboardList, UserCheck, Loader2, CheckSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLoading } from "@/components/ui/loading-provider"
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
-  { name: "My Events", href: "/dashboard/events", icon: Calendar },
-  { name: "Reservations", href: "/dashboard/reservations", icon: ClipboardList },
-  { name: "My Bookings", href: "/dashboard/my-bookings", icon: UserCheck },
-  { name: "Attendees", href: "/dashboard/attendees", icon: Users },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+const baseNavigation = [
+  { name: "Dashboard", href: "/dashboard", icon: BarChart3, adminOnly: false },
+  { name: "My Events", href: "/dashboard/events", icon: Calendar, adminOnly: false },
+  { name: "Reservations", href: "/dashboard/reservations", icon: ClipboardList, adminOnly: false },
+  { name: "My Bookings", href: "/dashboard/my-bookings", icon: UserCheck, adminOnly: false },
+  { name: "Attendees", href: "/dashboard/attendees", icon: Users, adminOnly: false },
+  { name: "Pending Approvals", href: "/dashboard/pending-approvals", icon: CheckSquare, adminOnly: true },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings, adminOnly: false },
 ]
 
 interface DashboardLayoutProps {
@@ -27,9 +29,30 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const { data: session } = useSession()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [navigating, setNavigating] = useState<string | null>(null)
+  const [userType, setUserType] = useState<string>('USER')
   const { isLoading: globalLoading, setPageLoading } = useLoading()
+
+  useEffect(() => {
+    const fetchUserType = async () => {
+      try {
+        const response = await fetch('/api/user/type')
+        if (response.ok) {
+          const data = await response.json()
+          console.log('User type fetched:', data.userType) // Debug log
+          setUserType(data.userType || 'USER')
+        }
+      } catch (error) {
+        console.error('Error fetching user type:', error)
+      }
+    }
+
+    if (session?.user) {
+      fetchUserType()
+    }
+  }, [session])
 
   const handleNavigation = (href: string) => {
     if (href === pathname) return
@@ -42,6 +65,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       setNavigating(null)
     }, 500)
   }
+
+  // Filter navigation based on user type
+  const navigation = baseNavigation.filter(item => {
+    if (item.adminOnly) {
+      // Check for both enum value and string comparison
+      const isAdmin = userType === 'ADMIN' || userType === 'admin'
+      console.log('Admin check:', { userType, isAdmin, itemName: item.name }) // Debug log
+      return isAdmin
+    }
+    return true
+  })
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col bg-sidebar">

@@ -5,11 +5,19 @@ import { useRouter } from "next/navigation"
 import { useLoading } from "@/components/ui/loading-provider"
 import { Loader2 } from "lucide-react"
 
-export function HeroSection() {
+interface HeroSectionProps {
+  pendingEventsCount: number
+  isAuthenticated: boolean
+}
+
+export function HeroSection({ pendingEventsCount, isAuthenticated }: HeroSectionProps) {
   const router = useRouter()
   const { isLoading: globalLoading, setLoading } = useLoading()
+  
+  const isDisabled = isAuthenticated && pendingEventsCount >= 2
 
   const handleHostEventClick = () => {
+    if (isDisabled) return
     setLoading("host-event", true)
     router.push("/create-event")
     setTimeout(() => setLoading("host-event", false), 500)
@@ -34,18 +42,23 @@ export function HeroSection() {
         <div className="text-center">
           <button
             onClick={handleHostEventClick}
-            disabled={globalLoading}
+            disabled={globalLoading || isDisabled}
             className="primary py-4 px-8 rounded-lg text-base transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center mx-auto"
             style={{
               background: "linear-gradient(135deg, #e61e4d 0%, #e31c5f 100%)",
               color: "#ffffff",
               border: "none",
-              cursor: globalLoading ? "not-allowed" : "pointer",
+              cursor: (globalLoading || isDisabled) ? "not-allowed" : "pointer",
             }}
           >
             {globalLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
             Host an Event
           </button>
+          {isDisabled && (
+            <p className="text-sm text-amber-600 mt-3 font-medium">
+              You have {pendingEventsCount} events pending approval. Please wait for admin approval before creating more events.
+            </p>
+          )}
         </div>
       </div>
     </section>

@@ -12,12 +12,19 @@ const categoryMap: Record<string, string> = {
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions as any)
     const { searchParams } = new URL(request.url)
     const hostId = searchParams.get('hostId')
 
-    let whereClause = {}
+    let whereClause: any = {}
+    
     if (hostId) {
+      // When filtering by hostId (My Events page), show all events for that host
       whereClause = { hostId: hostId }
+    } else {
+      // For public listing page, ALWAYS show only approved events
+      // This ensures created/pending events never appear on the home page
+      whereClause = { status: 'approved' }
     }
 
     const events = await prisma.event.findMany({
@@ -81,6 +88,7 @@ export async function GET(request: NextRequest) {
         host_whatsapp: event.hostWhatsapp,
         image_url: event.imageUrl,
         created_at: event.createdAt.toISOString(),
+        status: event.status,
         bookings: event.bookings.map((booking: any) => ({
           id: booking.id,
           status: booking.status.toLowerCase(),
@@ -119,6 +127,18 @@ export async function POST(request: NextRequest) {
     
     // Use a transaction to ensure atomicity and better connection management
     const event = await prisma.$transaction(async (tx: any) => {
+      // Check if user already has 2 events in 'created' status
+      const pendingEventsCount = await tx.event.count({
+        where: {
+          hostId: (session as any).user.id,
+          status: 'created'
+        }
+      })
+
+      if (pendingEventsCount >= 2) {
+        throw new Error('You already have 2 events pending approval. Please wait for admin approval before creating more events.')
+      }
+
       return await tx.event.create({
         data: {
           name: eventData.name,
@@ -132,7 +152,8 @@ export async function POST(request: NextRequest) {
           hostName: eventData.hostName,
           hostWhatsapp: eventData.hostWhatsapp,
           hostId: (session as any).user.id,
-          imageUrl: eventData.imageUrl
+          imageUrl: eventData.imageUrl,
+          status: 'created' // All new events start in 'created' status
         }
       })
     })
@@ -147,6 +168,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
           error: "Database connection timeout. Please try again." 
         }, { status: 503 })
+      }
+      // Return the custom validation error
+      if (error.message.includes('already have 2 events pending')) {
+        return NextResponse.json({ 
+          error: error.message 
+        }, { status: 400 })
       }
     }
     

@@ -44,12 +44,16 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isReservationOpen, setIsReservationOpen] = useState(false)
+  const [pendingEventsCount, setPendingEventsCount] = useState(0)
   
   const { data: session } = useSession()
 
   useEffect(() => {
     fetchEvents()
-  }, [])
+    if (session?.user) {
+      fetchPendingCount()
+    }
+  }, [session])
 
   useEffect(() => {
     let filtered = events
@@ -95,6 +99,18 @@ export default function HomePage() {
     }
   }
 
+  const fetchPendingCount = async () => {
+    try {
+      const response = await fetch('/api/events/pending-count')
+      if (response.ok) {
+        const data = await response.json()
+        setPendingEventsCount(data.count || 0)
+      }
+    } catch (error) {
+      console.error("Error fetching pending events count:", error)
+    }
+  }
+
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category)
     setSearchFilters(prev => ({ ...prev, category: null })) // Clear search category when using filter buttons
@@ -118,7 +134,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <HeroSection />
+      <HeroSection pendingEventsCount={pendingEventsCount} isAuthenticated={!!session?.user} />
 
       <main id="events" className="container mx-auto px-6 py-12">
         <PageLoadingWrapper loading={loading}>

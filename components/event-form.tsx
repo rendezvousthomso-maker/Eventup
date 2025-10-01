@@ -240,8 +240,9 @@ export function EventForm() {
             <div className="text-center space-y-4">
               <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto" />
               <h2 className="text-2xl font-bold text-gray-900">Event Created Successfully!</h2>
-              <p className="text-gray-600">Your event has been published and is now visible to attendees.</p>
-              <p className="text-sm text-gray-500">Redirecting to events page...</p>
+              <p className="text-gray-600">Your event has been submitted for admin approval.</p>
+              <p className="text-gray-600 text-sm">Once approved by an admin, your event will be visible to all attendees on the events listing page.</p>
+              <p className="text-sm text-gray-500 mt-4">Redirecting to home page...</p>
             </div>
           </CardContent>
         </Card>
